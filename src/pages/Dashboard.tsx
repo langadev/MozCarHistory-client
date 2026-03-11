@@ -35,7 +35,7 @@ const Dashboard = () => {
     const fetchRecords = async () => {
       if (!user?.id) return;
       try {
-        const response = await fetch(`http://localhost:3000/maintenance/workshop/${user.id}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/workshop/${user.id}`);
         if (response.ok) {
           const data = await response.json();
           setRecords(data);

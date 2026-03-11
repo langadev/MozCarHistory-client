@@ -19,7 +19,7 @@ const BuyerSearch = () => {
     try {
       const isPlate = !query.includes("-") && query.length < 10; // Simple heuristic
       const param = query.includes("-") || query.length < 10 ? `plate=${query}` : `vin=${query}`;
-      const response = await fetch(`http://localhost:3000/maintenance/search?${param}`);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/search?${param}`);
       if (response.ok) {
         const data = await response.json();
         setResults(data);

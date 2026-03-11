@@ -17,7 +17,7 @@ const VehicleHistory = () => {
     const fetchHistory = async () => {
       try {
         const param = plate ? `plate=${plate}` : `vin=${vin}`;
-        const response = await fetch(`http://localhost:3000/maintenance/search?${param}`);
+        const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/search?${param}`);
         if (response.ok) {
           const result = await response.json();
           setData(result);

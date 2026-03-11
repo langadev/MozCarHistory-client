@@ -39,7 +39,7 @@ const Login = () => {
         ? { ...formData, role: userType }
         : { email: formData.email, password: formData.password, role: userType };
 
-      const response = await fetch(`http://localhost:3000/auth/${endpoint}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
