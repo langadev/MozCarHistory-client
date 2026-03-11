@@ -1,10 +1,44 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Star, MapPin, Phone, Mail, Calendar, Wrench, Award } from "lucide-react";
+import { ShieldCheck, Star, MapPin, Phone, Mail, Calendar, Wrench, Award, MoveLeft, Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 const WorkshopProfile = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [records, setRecords] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await fetch(`http://localhost:3000/maintenance/workshop/${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setRecords(data);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar registos:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchRecords();
+  }, [user]);
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <button 
+          onClick={() => navigate(-1)} 
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-accent font-medium mb-6 transition-colors group"
+        >
+          <MoveLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          Voltar
+        </button>
         {/* Profile header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-lg shadow-card overflow-hidden mb-8">
           <div className="gradient-hero p-8">
@@ -14,7 +48,7 @@ const WorkshopProfile = () => {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
-                  <h1 className="font-display text-2xl md:text-3xl font-bold text-navy-foreground">Auto Mecânica Maputo, Lda.</h1>
+                  <h1 className="font-display text-2xl md:text-3xl font-bold text-navy-foreground">{user?.name || "Auto Mecânica Maputo, Lda."}</h1>
                   <div className="inline-flex items-center gap-1 bg-accent/20 text-accent px-2.5 py-1 rounded-full text-xs font-semibold">
                     <ShieldCheck className="h-3.5 w-3.5" />
                     Verificada
@@ -33,13 +67,13 @@ const WorkshopProfile = () => {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6">
             {[
               { icon: Star, label: "Pontuação", value: "4.8 / 5" },
-              { icon: Wrench, label: "Serviços Totais", value: "482" },
-              { icon: Calendar, label: "Desde", value: "Mar 2022" },
+              { icon: Wrench, label: "Serviços Totais", value: records.length.toString() },
+              { icon: Calendar, label: "Desde", value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-PT', { month: 'short', year: 'numeric' }) : "---" },
               { icon: Award, label: "Ranking", value: "Top 5%" },
             ].map((stat, i) => (
               <div key={i} className="text-center p-4 bg-muted/50 rounded-lg">
                 <stat.icon className="h-5 w-5 mx-auto mb-2 text-accent" />
-                <div className="text-lg font-display font-bold text-foreground">{stat.value}</div>
+                <div className="text-lg font-display font-bold text-foreground capitalize">{stat.value}</div>
                 <div className="text-xs text-muted-foreground">{stat.label}</div>
               </div>
             ))}
@@ -74,24 +108,30 @@ const WorkshopProfile = () => {
             <h3 className="font-display font-semibold text-foreground">Últimos Serviços Realizados</h3>
           </div>
           <div className="divide-y divide-border">
-            {[
-              { car: "Toyota Hilux 2019", plate: "MAA-123-MP", service: "Revisão Geral", date: "25/02/2026" },
-              { car: "Nissan NP300 2020", plate: "MBB-456-MP", service: "Substituição de Travões", date: "24/02/2026" },
-              { car: "Ford Ranger 2021", plate: "MDD-012-MP", service: "Troca de Óleo", date: "22/02/2026" },
-              { car: "Mitsubishi L200 2017", plate: "MEE-345-MP", service: "Diagnóstico Completo", date: "20/02/2026" },
-              { car: "Isuzu KB 2018", plate: "MFF-678-MP", service: "Suspensão Dianteira", date: "18/02/2026" },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
-                <div>
-                  <div className="font-medium text-sm text-foreground">{item.car}</div>
-                  <div className="text-xs text-muted-foreground">{item.plate} · {item.service}</div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">{item.date}</span>
-                  <ShieldCheck className="h-4 w-4 text-accent" />
-                </div>
+            {isLoading ? (
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 text-accent animate-spin" />
               </div>
-            ))}
+            ) : records.length > 0 ? (
+              records.map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+                  <div>
+                    <div className="font-medium text-sm text-foreground">{item.brandModel}</div>
+                    <div className="text-xs text-muted-foreground">{item.plateNumber} · {item.description}</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">
+                      {new Date(item.date).toLocaleDateString('pt-PT')}
+                    </span>
+                    <ShieldCheck className="h-4 w-4 text-accent" />
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                Nenhum serviço registado ainda.
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Shield, AlertTriangle, CheckCircle, Search, FileText, Car, Wrench, BarChart3, Users, Building2, ShieldCheck, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import heroImage from "@/assets/hero-car.jpg";
 
 const fadeUp = {
@@ -14,6 +15,7 @@ const fadeUp = {
 };
 
 const Index = () => {
+  const { isAuthenticated, user } = useAuth();
   return (
     <div className="min-h-screen">
       {/* Hero */}
@@ -40,18 +42,43 @@ const Index = () => {
               A primeira plataforma de Moçambique para registo e verificação do histórico completo de manutenção automóvel.
             </motion.p>
             <motion.div variants={fadeUp} custom={3} className="flex flex-col sm:flex-row gap-3">
-              <Link to="/login">
-                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8 animate-pulse-glow">
-                  <Building2 className="mr-2 h-5 w-5" />
-                  Registar Oficina
-                </Button>
-              </Link>
-              <Link to="/consulta">
-                <Button size="lg" variant="outline" className="border-navy-foreground/30 text-navy-foreground hover:bg-navy-foreground/10 font-semibold px-8">
-                  <Search className="mr-2 h-5 w-5" />
-                  Consultar Histórico
-                </Button>
-              </Link>
+              {!isAuthenticated ? (
+                <>
+                  <Link to="/login">
+                    <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8 animate-pulse-glow">
+                      <Building2 className="mr-2 h-5 w-5" />
+                      Registar Oficina
+                    </Button>
+                  </Link>
+                  <Link to="/consulta">
+                    <Button size="lg" variant="outline" className="border-navy-foreground/30 text-navy-foreground hover:bg-navy-foreground/10 font-semibold px-8">
+                      <Search className="mr-2 h-5 w-5" />
+                      Consultar Matrícula
+                    </Button>
+                  </Link>
+                  <Link to="/veiculos">
+                    <Button size="lg" variant="ghost" className="text-accent hover:bg-accent/10 font-semibold px-8 border border-accent/20">
+                      <Car className="mr-2 h-5 w-5" />
+                      Ver Catálogo
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to={user?.role === 'oficina' ? "/dashboard" : "/veiculos"}>
+                    <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold px-8">
+                      <Shield className="mr-2 h-5 w-5" />
+                      {user?.role === 'oficina' ? 'Ir para o Dashboard' : 'Ver Catálogo de Viaturas'}
+                    </Button>
+                  </Link>
+                  <Link to="/consulta">
+                    <Button size="lg" variant="outline" className="border-navy-foreground/30 text-navy-foreground hover:bg-navy-foreground/10 font-semibold px-8">
+                      <Search className="mr-2 h-5 w-5" />
+                      Fazer Nova Consulta
+                    </Button>
+                  </Link>
+                </>
+              )}
             </motion.div>
           </motion.div>
         </div>

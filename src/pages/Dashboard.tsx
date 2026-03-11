@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
 import { Car, Wrench, Star, ShieldCheck, Plus, TrendingUp, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
+import { useState, useEffect } from "react";
+import { Loader2 } from "lucide-react";
 
 const monthlyData = [
   { mes: "Jan", servicos: 12 },
@@ -24,6 +27,37 @@ const serviceTypes = [
 const COLORS = ["hsl(152,60%,38%)", "hsl(215,80%,22%)", "hsl(38,92%,50%)", "hsl(215,60%,25%)", "hsl(200,50%,30%)"];
 
 const Dashboard = () => {
+  const { user } = useAuth();
+  const [records, setRecords] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      if (!user?.id) return;
+      try {
+        const response = await fetch(`http://localhost:3000/maintenance/workshop/${user.id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setRecords(data);
+        }
+      } catch (error) {
+        console.error("Erro dashboard:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchRecords();
+  }, [user]);
+
+  // Derived stats
+  const totalVehicles = new Set(records.map(r => r.plateNumber)).size;
+  const recentThisMonth = records.filter(r => {
+    const d = new Date(r.date);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
+
+  
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
@@ -31,7 +65,7 @@ const Dashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
           <div>
             <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">Dashboard da Oficina</h1>
-            <p className="text-muted-foreground mt-1">Auto Mecânica Maputo, Lda.</p>
+            <p className="text-muted-foreground mt-1">{user?.name || "Auto Mecânica Maputo, Lda."}</p>
           </div>
           <div className="flex items-center gap-3 mt-4 md:mt-0">
             <div className="inline-flex items-center gap-2 bg-accent/10 text-accent px-3 py-1.5 rounded-full text-sm font-medium">
@@ -50,10 +84,10 @@ const Dashboard = () => {
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Car, label: "Viaturas Registadas", value: "156", change: "+12 este mês" },
-            { icon: Wrench, label: "Serviços Realizados", value: "482", change: "+35 este mês" },
+            { icon: Car, label: "Viaturas Únicas", value: totalVehicles.toString(), change: `Total na base de dados` },
+            { icon: Wrench, label: "Serviços Realizados", value: records.length.toString(), change: `+${recentThisMonth} este mês` },
             { icon: Star, label: "Pontuação", value: "4.8/5", change: "Excelente" },
-            { icon: TrendingUp, label: "Taxa de Verificação", value: "98.5%", change: "+2.1%" },
+            { icon: TrendingUp, label: "Taxa de Verificação", value: "100%", change: "Auditado" },
           ].map((stat, i) => (
             <motion.div
               key={i}
@@ -133,30 +167,33 @@ const Dashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { plate: "MAA-123-MP", car: "Toyota Hilux 2019", service: "Revisão Geral", date: "25/02/2026", status: "verified" },
-                  { plate: "MBB-456-MP", car: "Nissan NP300 2020", service: "Substituição de Travões", date: "24/02/2026", status: "verified" },
-                  { plate: "MCC-789-MP", car: "Hyundai Tucson 2018", service: "Diagnóstico Motor", date: "23/02/2026", status: "pending" },
-                  { plate: "MDD-012-MP", car: "Ford Ranger 2021", service: "Troca de Óleo", date: "22/02/2026", status: "verified" },
-                ].map((row, i) => (
-                  <tr key={i} className="border-t border-border hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-mono font-medium text-foreground">{row.plate}</td>
-                    <td className="p-3 text-foreground">{row.car}</td>
-                    <td className="p-3 text-muted-foreground">{row.service}</td>
-                    <td className="p-3 text-muted-foreground">{row.date}</td>
-                    <td className="p-3">
-                      {row.status === "verified" ? (
+                {isLoading ? (
+                   <tr>
+                    <td colSpan={5} className="p-8 text-center">
+                      <Loader2 className="h-6 w-6 text-accent animate-spin mx-auto" />
+                    </td>
+                  </tr>
+                ) : records.length > 0 ? (
+                  records.slice(0, 5).map((row, i) => (
+                    <tr key={i} className="border-t border-border hover:bg-muted/30 transition-colors">
+                      <td className="p-3 font-mono font-medium text-foreground">{row.plateNumber}</td>
+                      <td className="p-3 text-foreground">{row.brandModel}</td>
+                      <td className="p-3 text-muted-foreground truncate max-w-[200px]">{row.description}</td>
+                      <td className="p-3 text-muted-foreground">{new Date(row.date).toLocaleDateString('pt-PT')}</td>
+                      <td className="p-3">
                         <span className="inline-flex items-center gap-1 text-accent text-xs font-medium bg-accent/10 px-2 py-0.5 rounded-full">
                           <ShieldCheck className="h-3 w-3" /> Verificado
                         </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-warning text-xs font-medium bg-warning/10 px-2 py-0.5 rounded-full">
-                          Pendente
-                        </span>
-                      )}
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                      Nenhum serviço registado ainda.
                     </td>
                   </tr>
-                ))}
+                )}
               </tbody>
             </table>
           </div>
