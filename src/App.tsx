@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 
 import { AnimatePresence, motion } from "framer-motion";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
+import PublicRoute from "@/components/auth/PublicRoute";
 
 const queryClient = new QueryClient();
 
@@ -43,8 +44,15 @@ const App = () => (
           <AnimatePresence mode="wait">
             <Routes>
               <Route path="/" element={<PageWrapper><Index /></PageWrapper>} />
-              <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
-              
+              <Route
+                path="/login"
+                element={
+                  <PublicRoute>
+                    <PageWrapper><Login /></PageWrapper>
+                  </PublicRoute>
+                }
+              />
+
               {/* Workshop only routes */}
               <Route 
                 path="/dashboard" 
@@ -71,23 +79,9 @@ const App = () => (
                 } 
               />
 
-              {/* Shared or Buyer routes */}
-              <Route 
-                path="/historico" 
-                element={
-                  <ProtectedRoute>
-                    <PageWrapper><VehicleHistory /></PageWrapper>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/consulta" 
-                element={
-                  <ProtectedRoute>
-                    <PageWrapper><BuyerSearch /></PageWrapper>
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Public lookup pages */}
+              <Route path="/historico" element={<PageWrapper><VehicleHistory /></PageWrapper>} />
+              <Route path="/consulta" element={<PageWrapper><BuyerSearch /></PageWrapper>} />
 
               <Route 
                 path="/veiculos" 

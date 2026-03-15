@@ -3,12 +3,16 @@ import { ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin, Gauge, Calen
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { searchRecordsByPlate, searchRecordsByVin } from "@/api/records";
+import { useAuth } from "@/hooks/useAuth";
 
 const VehicleHistory = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   const plate = searchParams.get('plate');
   const vin = searchParams.get('vin');
@@ -16,14 +20,18 @@ const VehicleHistory = () => {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const param = plate ? `plate=${plate}` : `vin=${vin}`;
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/search?${param}`);
-        if (response.ok) {
-          const result = await response.json();
-          setData(result);
+        const result = plate
+          ? await searchRecordsByPlate(plate)
+          : await searchRecordsByVin(vin ?? "");
+
+        setData(result);
+
+        if (result.length === 0) {
+          toast.error("Nenhum histórico encontrado para esta viatura.");
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Erro ao carregar histórico:", error);
+        toast.error(error?.message || "Erro ao carregar histórico");
       } finally {
         setIsLoading(false);
       }
@@ -88,6 +96,16 @@ const VehicleHistory = () => {
                 <Download className="mr-2 h-4 w-4" />
                 Exportar PDF
               </Button>
+              {user?.role === "oficina" && (
+                <Button 
+                  size="sm" 
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                  onClick={() => navigate(`/registar-servico?plate=${vehicle.plateNumber}${vehicle.vin ? `&vin=${vehicle.vin}` : ''}&brand=${encodeURIComponent(vehicle.brandModel)}`)}
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Novo Serviço
+                </Button>
+              )}
             </div>
           </div>
         </motion.div>

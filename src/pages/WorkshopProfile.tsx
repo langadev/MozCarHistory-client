@@ -3,9 +3,11 @@ import { motion } from "framer-motion";
 import { ShieldCheck, Star, MapPin, Phone, Mail, Calendar, Wrench, Award, MoveLeft, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { getWorkshopRecords, VehicleSummary } from "@/api/records";
 
 const WorkshopProfile = () => {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
   const [records, setRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -14,20 +16,18 @@ const WorkshopProfile = () => {
     const fetchRecords = async () => {
       if (!user?.id) return;
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/workshop/${user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setRecords(data);
-        }
-      } catch (error) {
+        const data = await getWorkshopRecords(user.id, token ?? undefined);
+        setRecords(data);
+      } catch (error: any) {
         console.error("Erro ao carregar registos:", error);
+        toast.error(error?.message || "Erro ao carregar registos");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchRecords();
-  }, [user]);
+  }, [user, token]);
 
   return (
     <div className="min-h-screen bg-background">

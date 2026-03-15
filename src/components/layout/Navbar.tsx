@@ -36,6 +36,7 @@ const Navbar = () => {
       }
       return (
         <>
+          <Link to="/consulta" onClick={() => isMobile && setMobileOpen(false)} className={location.pathname === "/consulta" ? activeClass : linkClass}>Consultar</Link>
           <Link to="/veiculos" onClick={() => isMobile && setMobileOpen(false)} className={location.pathname === "/veiculos" ? activeClass : linkClass}>Veículos</Link>
           <Link to="/login" onClick={() => isMobile && setMobileOpen(false)}>
             <Button size="sm" className={`bg-accent text-accent-foreground hover:bg-accent/90 ${isMobile ? "w-full" : ""}`}>

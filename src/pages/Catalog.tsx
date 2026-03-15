@@ -5,22 +5,25 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getAllVehicles, VehicleSummary } from "@/api/records";
 
 const Catalog = () => {
-    const [vehicles, setVehicles] = useState<any[]>([]);
+    const [vehicles, setVehicles] = useState<VehicleSummary[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
 
     useEffect(() => {
         const fetchVehicles = async () => {
             try {
-                const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/all-vehicles`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setVehicles(data);
+                const data = await getAllVehicles();
+                setVehicles(data);
+                if (data.length === 0) {
+                    toast.error("Nenhuma viatura encontrada no catálogo.");
                 }
-            } catch (error) {
+            } catch (error: any) {
                 console.error("Erro ao carregar catálogo:", error);
+                toast.error(error?.message || "Erro ao carregar catálogo de viaturas");
             } finally {
                 setIsLoading(false);
             }

@@ -4,6 +4,8 @@ import { Search, Car, ShieldCheck, AlertTriangle, FileText, Building2, Plus, Loa
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { searchRecordsByPlate, searchRecordsByVin } from "@/api/records";
 
 const BuyerSearch = () => {
   const [query, setQuery] = useState("");
@@ -18,17 +20,22 @@ const BuyerSearch = () => {
     setIsLoading(true);
     try {
       const isPlate = !query.includes("-") && query.length < 10; // Simple heuristic
-      const param = query.includes("-") || query.length < 10 ? `plate=${query}` : `vin=${query}`;
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/search?${param}`);
-      if (response.ok) {
-        const data = await response.json();
-        setResults(data);
-        setSearched(true);
+      const data = isPlate
+        ? await searchRecordsByPlate(query)
+        : await searchRecordsByVin(query);
+
+      setResults(data);
+      setSearched(true);
+
+      if (data.length === 0) {
+        toast.error("Nenhum registo encontrado para a pesquisa.");
+      } else {
+        toast.success(`${data.length} registo(s) encontrado(s).`);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro na busca:", error);
+      toast.error(error?.message || "Erro ao pesquisar viatura");
     } finally {
-      setIsLoading(true);
       // Simulating a small delay for premium feel
       setTimeout(() => setIsLoading(false), 800);
     }

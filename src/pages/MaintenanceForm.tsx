@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Car, Wrench, Camera, Save, Hash, Gauge, User, Plus, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { createRecord } from "@/api/records";
 
 const MaintenanceForm = () => {
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     plate: "",
     vin: "",
@@ -24,8 +26,24 @@ const MaintenanceForm = () => {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const navigate = useNavigate();
+
+  // Pre-fill form data from URL parameters
+  useEffect(() => {
+    const plate = searchParams.get('plate');
+    const vin = searchParams.get('vin');
+    const brand = searchParams.get('brand');
+
+    if (plate || vin || brand) {
+      setFormData(prev => ({
+        ...prev,
+        plate: plate || prev.plate,
+        vin: vin || prev.vin,
+        brand: brand || prev.brand,
+      }));
+    }
+  }, [searchParams]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -45,6 +63,14 @@ const MaintenanceForm = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: id === 'km' ? Number(value) : value }));
+  };
+
+  const getMessage = (error: any) => {
+    if (!error) return 'Erro desconhecido';
+    if (typeof error === 'string') return error;
+    if (Array.isArray(error)) return error.join(' ');
+    if (error?.message) return error.message;
+    return JSON.stringify(error);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -67,17 +93,31 @@ const MaintenanceForm = () => {
         data.append('photos', file);
       });
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance`, {
-        method: 'POST',
-        body: data,
-      });
-
-      if (!response.ok) throw new Error('Erro ao guardar o registo');
+      await createRecord(
+        {
+          plateNumber: formData.plate,
+          vin: formData.vin,
+          brandModel: formData.brand,
+          mileage: formData.km,
+          description: formData.desc,
+          parts: formData.parts,
+          mechanic: formData.mechanic,
+          workshopId: user.id,
+          photos: photoFiles,
+        },
+        token ?? undefined,
+      );
 
       toast.success("Serviço registado com sucesso!");
-      navigate('/dashboard');
+      
+      // If we came from a vehicle history page, go back to it
+      if (formData.plate) {
+        navigate(`/historico?plate=${formData.plate}`);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(getMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -94,8 +134,12 @@ const MaintenanceForm = () => {
           Voltar
         </button>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">Registar Novo Serviço</h1>
-          <p className="text-muted-foreground mb-8">Preencha os dados da manutenção realizada.</p>
+          <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground mb-2">
+            {formData.plate ? `Registar Novo Serviço - ${formData.plate}` : "Registar Novo Serviço"}
+          </h1>
+          <p className="text-muted-foreground mb-8">
+            {formData.plate ? "Adicione um novo registo de manutenção para esta viatura." : "Preencha os dados da manutenção realizada."}
+          </p>
 
           <form className="space-y-8" onSubmit={handleSubmit}>
             {/* Vehicle info */}

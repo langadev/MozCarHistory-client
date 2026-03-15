@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import * as authApi from "@/api/auth";
 
 const Login = () => {
   const [isRegister, setIsRegister] = useState(false);
-  const [userType, setUserType] = useState<"oficina" | "comprador">("oficina");
+  const [userType, setUserType] = useState<"oficina" | "comprador">("comprador");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
@@ -29,32 +30,27 @@ const Login = () => {
     setFormData(prev => ({ ...prev, [e.target.id]: e.target.value }));
   };
 
+  const getMessage = (error: any) => {
+    if (!error) return 'Erro desconhecido';
+    if (typeof error === 'string') return error;
+    if (Array.isArray(error)) return error.join(' ');
+    if (error?.message) return error.message;
+    return JSON.stringify(error);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const endpoint = isRegister ? 'register' : 'login';
-      const body = isRegister 
-        ? { ...formData, role: userType }
-        : { email: formData.email, password: formData.password, role: userType };
-
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Erro na autenticação');
-      }
+      const data = isRegister
+        ? await authApi.register({ ...formData, role: userType })
+        : await authApi.login({ email: formData.email, password: formData.password });
 
       authLogin(data.user, data.access_token);
       toast.success(isRegister ? "Conta criada com sucesso!" : "Bem-vindo de volta!");
     } catch (error: any) {
-      toast.error(error.message);
+      toast.error(getMessage(error));
     } finally {
       setIsLoading(false);
     }
@@ -110,30 +106,32 @@ const Login = () => {
               </p>
 
               {/* User type selector */}
-              <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-muted rounded-xl">
-                <button
-                  onClick={() => setUserType("oficina")}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-sm font-medium transition-all ${
-                    userType === "oficina"
-                      ? "bg-card text-accent shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <Building2 className="h-4 w-4" />
-                  Oficina
-                </button>
-                <button
-                  onClick={() => setUserType("comprador")}
-                  className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-sm font-medium transition-all ${
-                    userType === "comprador"
-                      ? "bg-card text-accent shadow-sm"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  <User className="h-4 w-4" />
-                  Comprador
-                </button>
-              </div>
+{isRegister && (
+        <div className="grid grid-cols-2 gap-2 mb-6 p-1 bg-muted rounded-xl">
+          <button
+            onClick={() => setUserType("oficina")}
+            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-sm font-medium transition-all ${
+              userType === "oficina"
+                ? "bg-card text-accent shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Building2 className="h-4 w-4" />
+            Oficina
+          </button>
+          <button
+            onClick={() => setUserType("comprador")}
+            className={`flex items-center justify-center gap-2 p-2.5 rounded-lg text-sm font-medium transition-all ${
+              userType === "comprador"
+                ? "bg-card text-accent shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <User className="h-4 w-4" />
+            Comprador
+          </button>
+        </div>
+      )}
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 {isRegister && (

@@ -6,6 +6,8 @@ import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { useState, useEffect } from "react";
 import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { getWorkshopRecords, VehicleSummary } from "@/api/records";
 
 const monthlyData = [
   { mes: "Jan", servicos: 12 },
@@ -27,27 +29,25 @@ const serviceTypes = [
 const COLORS = ["hsl(152,60%,38%)", "hsl(215,80%,22%)", "hsl(38,92%,50%)", "hsl(215,60%,25%)", "hsl(200,50%,30%)"];
 
 const Dashboard = () => {
-  const { user } = useAuth();
-  const [records, setRecords] = useState<any[]>([]);
+  const { user, token } = useAuth();
+  const [records, setRecords] = useState<VehicleSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchRecords = async () => {
       if (!user?.id) return;
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL}/maintenance/workshop/${user.id}`);
-        if (response.ok) {
-          const data = await response.json();
-          setRecords(data);
-        }
-      } catch (error) {
+        const data = await getWorkshopRecords(user.id, token ?? undefined);
+        setRecords(data);
+      } catch (error: any) {
         console.error("Erro dashboard:", error);
+        toast.error(error?.message || "Erro ao carregar dados do dashboard");
       } finally {
         setIsLoading(false);
       }
     };
     fetchRecords();
-  }, [user]);
+  }, [user, token]);
 
   // Derived stats
   const totalVehicles = new Set(records.map(r => r.plateNumber)).size;
