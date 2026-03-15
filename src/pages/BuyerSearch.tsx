@@ -19,10 +19,12 @@ const BuyerSearch = () => {
     
     setIsLoading(true);
     try {
-      const isPlate = !query.includes("-") && query.length < 10; // Simple heuristic
-      const data = isPlate
-        ? await searchRecordsByPlate(query)
-        : await searchRecordsByVin(query);
+      // VIN numbers are almost always exactly 17 characters long.
+      // Plates in Mozambique frequently contain hyphens (e.g. MAA-123-MP) and are shorter.
+      const isVin = query.trim().length === 17 && !query.includes("-");
+      const data = isVin
+        ? await searchRecordsByVin(query.trim())
+        : await searchRecordsByPlate(query.trim());
 
       setResults(data);
       setSearched(true);

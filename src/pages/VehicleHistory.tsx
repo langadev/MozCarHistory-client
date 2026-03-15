@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin, Gauge, Calendar, User, Loader2, Plus } from "lucide-react";
+import { ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin, Gauge, Calendar, User, Loader2, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ const VehicleHistory = () => {
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [lightbox, setLightbox] = useState<{ photos: string[], index: number } | null>(null);
   const { user } = useAuth();
 
   const plate = searchParams.get('plate');
@@ -186,19 +187,18 @@ const VehicleHistory = () => {
                     <p className="text-sm font-semibold mb-2">Fotos do Serviço:</p>
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
                       {record.photos.map((photo: string, idx: number) => (
-                        <a
+                        <button
                           key={idx}
-                          href={photo}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="aspect-square rounded-md overflow-hidden border border-border hover:border-accent transition-colors block"
+                          type="button"
+                          onClick={() => setLightbox({ photos: record.photos, index: idx })}
+                          className="aspect-square rounded-md overflow-hidden border border-border hover:border-accent transition-colors block p-0"
                         >
                           <img
                             src={photo}
                             alt={`Serviço ${idx + 1}`}
                             className="w-full h-full object-cover"
                           />
-                        </a>
+                        </button>
                       ))}
                     </div>
                   </div>
@@ -221,6 +221,57 @@ const VehicleHistory = () => {
           ))}
         </div>
       </div>
+      
+      {/* Lightbox Modal */}
+      {lightbox && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button 
+            type="button"
+            className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2"
+            onClick={() => setLightbox(null)}
+          >
+            <X className="h-8 w-8" />
+          </button>
+
+          {lightbox.photos.length > 1 && (
+            <button
+               type="button"
+               className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2 z-50"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setLightbox(prev => prev ? { ...prev, index: (prev.index - 1 + prev.photos.length) % prev.photos.length } : null);
+               }}
+            >
+              <ChevronLeft className="h-10 w-10 sm:h-14 sm:w-14" />
+            </button>
+          )}
+
+          <div className="relative max-w-[90vw] max-h-[90vh]">
+            <img 
+              src={lightbox.photos[lightbox.index]} 
+              alt="Preview em ecrã inteiro" 
+              className="max-h-[90vh] max-w-full rounded-md object-contain shadow-2xl transition-opacity duration-300"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+
+          {lightbox.photos.length > 1 && (
+            <button
+               type="button"
+               className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2 z-50"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 setLightbox(prev => prev ? { ...prev, index: (prev.index + 1) % prev.photos.length } : null);
+               }}
+            >
+              <ChevronRight className="h-10 w-10 sm:h-14 sm:w-14" />
+            </button>
+          )}
+        </div>
+      )}
     </div>
   );
 };

@@ -4,27 +4,10 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getWorkshopRecords, VehicleSummary } from "@/api/records";
-
-const monthlyData = [
-  { mes: "Jan", servicos: 12 },
-  { mes: "Fev", servicos: 19 },
-  { mes: "Mar", servicos: 15 },
-  { mes: "Abr", servicos: 22 },
-  { mes: "Mai", servicos: 28 },
-  { mes: "Jun", servicos: 35 },
-];
-
-const serviceTypes = [
-  { name: "Manutenção Geral", value: 40 },
-  { name: "Travões", value: 20 },
-  { name: "Motor", value: 15 },
-  { name: "Suspensão", value: 15 },
-  { name: "Elétrica", value: 10 },
-];
 
 const COLORS = ["hsl(152,60%,38%)", "hsl(215,80%,22%)", "hsl(38,92%,50%)", "hsl(215,60%,25%)", "hsl(200,50%,30%)"];
 
@@ -56,6 +39,50 @@ const Dashboard = () => {
     const now = new Date();
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
+
+  const monthlyData = useMemo(() => {
+    const monthsNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const now = new Date();
+    const last6Months = Array.from({ length: 6 }).map((_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      return { mes: monthsNames[d.getMonth()], year: d.getFullYear(), month: d.getMonth(), servicos: 0 };
+    }).reverse();
+
+    records.forEach(r => {
+      const d = new Date(r.date);
+      const match = last6Months.find(m => m.month === d.getMonth() && m.year === d.getFullYear());
+      if (match) match.servicos++;
+    });
+
+    return last6Months.map(({ mes, servicos }) => ({ mes, servicos }));
+  }, [records]);
+
+  const serviceTypes = useMemo(() => {
+    const types = {
+      "Manutenção Geral": 0,
+      "Travões": 0,
+      "Motor": 0,
+      "Suspensão": 0,
+      "Elétrica": 0,
+    };
+    
+    records.forEach(r => {
+      const desc = ((r.description || "") + " " + (r.parts || "")).toLowerCase();
+      if (desc.includes('motor') || desc.includes('oleo') || desc.includes('óleo')) {
+        types["Motor"]++;
+      } else if (desc.includes('travoes') || desc.includes('travão') || desc.includes('travões') || desc.includes('pastilha')) {
+        types["Travões"]++;
+      } else if (desc.includes('suspensa') || desc.includes('suspensão') || desc.includes('amortecedor')) {
+        types["Suspensão"]++;
+      } else if (desc.includes('eletr') || desc.includes('elétr') || desc.includes('bateria') || desc.includes('luz')) {
+        types["Elétrica"]++;
+      } else {
+        types["Manutenção Geral"]++;
+      }
+    });
+
+    return Object.entries(types).map(([name, value]) => ({ name, value }));
+  }, [records]);
 
   
   return (
