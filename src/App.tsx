@@ -14,6 +14,7 @@ import VehicleHistory from "./pages/VehicleHistory";
 import BuyerSearch from "./pages/BuyerSearch";
 import WorkshopProfile from "./pages/WorkshopProfile";
 import Catalog from "./pages/Catalog";
+import CarForm from "./pages/CarForm";
 import NotFound from "./pages/NotFound";
 
 import { AnimatePresence, motion } from "framer-motion";
@@ -59,6 +60,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={["oficina"]}>
                     <PageWrapper><Dashboard /></PageWrapper>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/registar-viatura" 
+                element={
+                  <ProtectedRoute allowedRoles={["oficina"]}>
+                    <PageWrapper><CarForm /></PageWrapper>
                   </ProtectedRoute>
                 } 
               />

@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { createRecord } from "@/api/records";
+import { getCarByPlate, getAllCars } from "@/api/cars";
 
 const MaintenanceForm = () => {
   const [searchParams] = useSearchParams();
@@ -24,26 +25,40 @@ const MaintenanceForm = () => {
   });
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [registeredCars, setRegisteredCars] = useState<any[]>([]);
+  const [selectedCar, setSelectedCar] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
   const { user, token } = useAuth();
   const navigate = useNavigate();
 
-  // Pre-fill form data from URL parameters
+  // Pre-fill form data from URL parameters and fetch cars
   useEffect(() => {
-    const plate = searchParams.get('plate');
-    const vin = searchParams.get('vin');
-    const brand = searchParams.get('brand');
-
-    if (plate || vin || brand) {
-      setFormData(prev => ({
-        ...prev,
-        plate: plate || prev.plate,
-        vin: vin || prev.vin,
-        brand: brand || prev.brand,
-      }));
-    }
-  }, [searchParams]);
+    const fetchCars = async () => {
+      try {
+        const cars = await getAllCars(token ?? undefined);
+        setRegisteredCars(cars);
+        
+        const plate = searchParams.get('plate');
+        if (plate) {
+          const match = cars.find(c => c.plateNumber === plate);
+          if (match) {
+            setSelectedCar(match);
+            setFormData(prev => ({
+              ...prev,
+              plate: match.plateNumber,
+              vin: match.vin || "",
+              brand: match.brandModel,
+            }));
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao carregar viaturas:", error);
+      }
+    };
+    fetchCars();
+  }, [searchParams, token]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -79,25 +94,15 @@ const MaintenanceForm = () => {
     setIsLoading(true);
 
     try {
-      const data = new FormData();
-      data.append('plateNumber', formData.plate);
-      data.append('vin', formData.vin);
-      data.append('brandModel', formData.brand);
-      data.append('mileage', formData.km.toString());
-      data.append('description', formData.desc);
-      data.append('parts', formData.parts);
-      data.append('mechanic', formData.mechanic);
-      data.append('workshopId', user.id.toString());
-      
-      photoFiles.forEach(file => {
-        data.append('photos', file);
-      });
+      if (!selectedCar) {
+        toast.error("Por favor, selecione uma viatura válida da lista.");
+        setIsLoading(false);
+        return;
+      }
 
       await createRecord(
         {
-          plateNumber: formData.plate,
-          vin: formData.vin,
-          brandModel: formData.brand,
+          carId: selectedCar.id,
           mileage: formData.km,
           description: formData.desc,
           parts: formData.parts,
@@ -149,56 +154,71 @@ const MaintenanceForm = () => {
                 <h2 className="font-display font-semibold text-foreground">Dados da Viatura</h2>
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="plate">Matrícula</Label>
-                  <div className="relative mt-1">
-                    <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="plate" 
-                      placeholder="MAA-123-MP" 
-                      className="pl-10 font-mono" 
-                      value={formData.plate}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label htmlFor="vin">Número de Chassis (VIN)</Label>
-                  <Input 
-                    id="vin" 
-                    placeholder="1HGBH41JXMN109186" 
-                    className="mt-1 font-mono" 
-                    value={formData.vin}
-                    onChange={handleInputChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="brand">Marca / Modelo</Label>
-                  <Input 
-                    id="brand" 
-                    placeholder="Toyota Hilux" 
-                    className="mt-1" 
-                    value={formData.brand}
-                    onChange={handleInputChange}
+                <div className="sm:col-span-2">
+                  <Label htmlFor="car-select">Selecionar Viatura Registada *</Label>
+                  <select
+                    id="car-select"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 mt-1"
+                    value={selectedCar?.id || ""}
+                    onChange={(e) => {
+                      const car = registeredCars.find(c => c.id === Number(e.target.value));
+                      setSelectedCar(car);
+                      if (car) {
+                        setFormData(prev => ({
+                          ...prev,
+                          plate: car.plateNumber,
+                          vin: car.vin || "",
+                          brand: car.brandModel
+                        }));
+                      }
+                    }}
                     required
-                  />
+                  >
+                    <option value="">-- Selecione uma viatura --</option>
+                    {registeredCars.map(car => (
+                      <option key={car.id} value={car.id}>
+                        {car.plateNumber} - {car.brandModel}
+                      </option>
+                    ))}
+                  </select>
+                  {registeredCars.length === 0 && !isLoading && (
+                    <p className="text-[10px] text-destructive mt-1">
+                      Nenhuma viatura registada no sistema. <Link to="/registar-viatura" className="underline font-bold text-accent">Registe uma aqui</Link> primeiro.
+                    </p>
+                  )}
                 </div>
-                <div>
-                  <Label htmlFor="km">Quilometragem Atual</Label>
-                  <div className="relative mt-1">
-                    <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="km" 
-                      type="number" 
-                      placeholder="85000" 
-                      className="pl-10" 
-                      value={formData.km}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </div>
-                </div>
+
+                {selectedCar && (
+                  <>
+                    <div>
+                      <Label>Matrícula</Label>
+                      <Input disabled value={selectedCar.plateNumber} className="mt-1 bg-muted font-mono" />
+                    </div>
+                    <div>
+                      <Label>Marca / Modelo</Label>
+                      <Input disabled value={selectedCar.brandModel} className="mt-1 bg-muted" />
+                    </div>
+                    <div>
+                      <Label htmlFor="km">Quilometragem Atual *</Label>
+                      <div className="relative mt-1">
+                        <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          id="km" 
+                          type="number" 
+                          placeholder="85000" 
+                          className="pl-10" 
+                          value={formData.km}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Número de Chassis (VIN)</Label>
+                      <Input disabled value={selectedCar.vin || "N/A"} className="mt-1 bg-muted font-mono" />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

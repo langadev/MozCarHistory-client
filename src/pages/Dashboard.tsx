@@ -8,20 +8,26 @@ import { useState, useEffect, useMemo } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getWorkshopRecords, VehicleSummary } from "@/api/records";
+import { getAllCars, Car as ICar } from "@/api/cars";
 
 const COLORS = ["hsl(152,60%,38%)", "hsl(215,80%,22%)", "hsl(38,92%,50%)", "hsl(215,60%,25%)", "hsl(200,50%,30%)"];
 
 const Dashboard = () => {
   const { user, token } = useAuth();
   const [records, setRecords] = useState<VehicleSummary[]>([]);
+  const [cars, setCars] = useState<ICar[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchRecords = async () => {
+    const fetchDashboardData = async () => {
       if (!user?.id) return;
       try {
-        const data = await getWorkshopRecords(user.id, token ?? undefined);
-        setRecords(data);
+        const [recordsData, carsData] = await Promise.all([
+          getWorkshopRecords(user.id, token ?? undefined),
+          getAllCars(token ?? undefined)
+        ]);
+        setRecords(recordsData);
+        setCars(carsData);
       } catch (error: any) {
         console.error("Erro dashboard:", error);
         toast.error(error?.message || "Erro ao carregar dados do dashboard");
@@ -29,11 +35,11 @@ const Dashboard = () => {
         setIsLoading(false);
       }
     };
-    fetchRecords();
+    fetchDashboardData();
   }, [user, token]);
 
   // Derived stats
-  const totalVehicles = new Set(records.map(r => r.plateNumber)).size;
+  const totalVehicles = new Set(records.map(r => r.car?.plateNumber)).size;
   const recentThisMonth = records.filter(r => {
     const d = new Date(r.date);
     const now = new Date();
@@ -99,12 +105,20 @@ const Dashboard = () => {
               <ShieldCheck className="h-4 w-4" />
               Oficina Verificada
             </div>
-            <Link to="/registar-servico">
-              <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                <Plus className="mr-2 h-4 w-4" />
-                Registar Novo Serviço
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Link to="/registar-viatura">
+                <Button variant="outline" className="w-full sm:w-auto border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+                  <Car className="mr-2 h-4 w-4" />
+                  Registar Nova Viatura
+                </Button>
+              </Link>
+              <Link to="/registar-servico">
+                <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Registar Novo Serviço
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -177,6 +191,64 @@ const Dashboard = () => {
           </motion.div>
         </div>
 
+        {/* Recently Registered Vehicles */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-display font-semibold text-lg text-foreground flex items-center gap-2">
+              <Car className="h-5 w-5 text-accent" />
+              Viaturas Registadas Recentemente
+            </h3>
+            <Link to="/consulta" className="text-sm text-accent hover:underline font-medium">
+              Ver Catálogo
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {isLoading ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="aspect-[4/3] bg-muted animate-pulse rounded-lg" />
+              ))
+            ) : cars.length > 0 ? (
+              cars.slice(0, 6).map((car, i) => (
+                <motion.div
+                  key={car.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="group bg-card border border-border rounded-lg overflow-hidden shadow-sm hover:shadow-card transition-all"
+                >
+                  <Link to={`/historico?plate=${car.plateNumber}`}>
+                    <div className="aspect-[4/3] bg-muted relative overflow-hidden">
+                      {car.photos && car.photos.length > 0 ? (
+                        <img 
+                          src={car.photos[0]} 
+                          alt={car.brandModel} 
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-muted-foreground/20">
+                          <Car className="h-10 w-10" />
+                        </div>
+                      )}
+                      <div className="absolute top-2 left-2">
+                        <span className="bg-background/90 backdrop-blur-sm px-1.5 py-0.5 rounded border border-border text-[8px] font-mono font-bold">
+                          {car.plateNumber}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-2 border-t border-border bg-card">
+                      <div className="text-[10px] font-bold text-foreground truncate">{car.brandModel}</div>
+                    </div>
+                  </Link>
+                </motion.div>
+              ))
+            ) : (
+              <div className="col-span-full py-8 text-center bg-muted/30 rounded-lg border border-dashed border-border">
+                <p className="text-sm text-muted-foreground">Nenhuma viatura registada.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Recent services */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="bg-card border border-border rounded-lg shadow-card overflow-hidden">
           <div className="p-6 border-b border-border">
@@ -191,20 +263,21 @@ const Dashboard = () => {
                   <th className="text-left p-3 font-medium text-muted-foreground">Serviço</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Estado</th>
+                  <th className="text-right p-3 font-medium text-muted-foreground">Acções</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading ? (
                    <tr>
-                    <td colSpan={5} className="p-8 text-center">
+                    <td colSpan={6} className="p-8 text-center">
                       <Loader2 className="h-6 w-6 text-accent animate-spin mx-auto" />
                     </td>
                   </tr>
                 ) : records.length > 0 ? (
                   records.slice(0, 5).map((row, i) => (
                     <tr key={i} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-mono font-medium text-foreground">{row.plateNumber}</td>
-                      <td className="p-3 text-foreground">{row.brandModel}</td>
+                      <td className="p-3 font-mono font-medium text-foreground">{row.car?.plateNumber}</td>
+                      <td className="p-3 text-foreground">{row.car?.brandModel}</td>
                       <td className="p-3 text-muted-foreground truncate max-w-[200px]">{row.description}</td>
                       <td className="p-3 text-muted-foreground">{new Date(row.date).toLocaleDateString('pt-PT')}</td>
                       <td className="p-3">
@@ -212,11 +285,16 @@ const Dashboard = () => {
                           <ShieldCheck className="h-3 w-3" /> Verificado
                         </span>
                       </td>
+                      <td className="p-3 text-right">
+                        <Link to={`/historico?plate=${row.car?.plateNumber}`} className="text-accent hover:underline font-medium">
+                          Histórico
+                        </Link>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    <td colSpan={6} className="p-8 text-center text-muted-foreground">
                       Nenhum serviço registado ainda.
                     </td>
                   </tr>

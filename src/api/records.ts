@@ -2,9 +2,12 @@ import { apiFetch, withAuthToken } from "./client";
 
 export interface VehicleSummary {
   id: number;
-  plateNumber: string;
-  vin?: string;
-  brandModel: string;
+  car: {
+    plateNumber: string;
+    vin?: string;
+    brandModel: string;
+    photos?: string[];
+  };
   mileage: number;
   description: string;
   parts?: string;
@@ -16,9 +19,7 @@ export interface VehicleSummary {
 }
 
 export interface CreateRecordPayload {
-  plateNumber: string;
-  vin?: string;
-  brandModel: string;
+  carId: number;
   mileage: number;
   description: string;
   parts?: string;
@@ -28,7 +29,23 @@ export interface CreateRecordPayload {
 }
 
 export async function getAllVehicles(): Promise<VehicleSummary[]> {
-  return apiFetch<VehicleSummary[]>("/maintenance/all-vehicles");
+  const result = await apiFetch<any[]>("/maintenance/all-vehicles");
+  // Map Car objects to VehicleSummary
+  return result.map(car => ({
+    id: car.id,
+    car: {
+      plateNumber: car.plateNumber,
+      vin: car.vin,
+      brandModel: car.brandModel,
+      photos: car.photos,
+    },
+    mileage: car.records?.[0]?.mileage || 0,
+    description: car.records?.[0]?.description || "Sem descrição disponível",
+    date: car.records?.[0]?.date || car.createdAt,
+    workshopId: car.records?.[0]?.workshopId || 0,
+    photos: car.records?.[0]?.photos || [],
+    workshop: car.records?.[0]?.workshop,
+  }));
 }
 
 export async function searchRecordsByPlate(plate: string): Promise<VehicleSummary[]> {
@@ -48,9 +65,7 @@ export async function getWorkshopRecords(workshopId: number, token?: string): Pr
 export async function createRecord(payload: CreateRecordPayload, token?: string) {
   const formData = new FormData();
 
-  formData.append("plateNumber", payload.plateNumber);
-  if (payload.vin) formData.append("vin", payload.vin);
-  formData.append("brandModel", payload.brandModel);
+  formData.append("carId", String(payload.carId));
   formData.append("mileage", String(payload.mileage));
   formData.append("description", payload.description);
   if (payload.parts) formData.append("parts", payload.parts);

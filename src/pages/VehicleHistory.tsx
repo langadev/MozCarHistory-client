@@ -5,15 +5,17 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { searchRecordsByPlate, searchRecordsByVin } from "@/api/records";
+import { getCarByPlate } from "@/api/cars";
 import { useAuth } from "@/hooks/useAuth";
 
 const VehicleHistory = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
+  const [carInfo, setCarInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightbox, setLightbox] = useState<{ photos: string[], index: number } | null>(null);
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const plate = searchParams.get('plate');
   const vin = searchParams.get('vin');
@@ -27,8 +29,13 @@ const VehicleHistory = () => {
 
         setData(result);
 
-        if (result.length === 0) {
-          toast.error("Nenhum histórico encontrado para esta viatura.");
+        if (result.length === 0 && plate) {
+          const car = await getCarByPlate(plate, token ?? undefined);
+          if (car) {
+            setCarInfo(car);
+          } else {
+            toast.error("Nenhum histórico ou viatura encontrada.");
+          }
         }
       } catch (error: any) {
         console.error("Erro ao carregar histórico:", error);
@@ -43,7 +50,7 @@ const VehicleHistory = () => {
     } else {
       setIsLoading(false);
     }
-  }, [plate, vin]);
+  }, [plate, vin, token]);
 
   if (isLoading) {
     return (
@@ -53,16 +60,21 @@ const VehicleHistory = () => {
     );
   }
 
-  if (data.length === 0) {
+  if (data.length === 0 && !carInfo) {
     return (
-      <div className="min-h-screen bg-background p-4 md:p-8 text-center">
-        <h2 className="text-lg md:text-xl font-bold mb-4">Nenhum registo encontrado.</h2>
+      <div className="min-h-screen bg-background p-4 md:p-8 text-center flex flex-col items-center justify-center">
+        <Car className="h-16 w-16 text-muted-foreground/20 mb-4" />
+        <h2 className="text-lg md:text-xl font-bold mb-4 text-foreground">Viatura não encontrada.</h2>
+        <p className="text-muted-foreground mb-8 max-w-xs mx-auto">
+          Não conseguimos encontrar registos para esta viatura no sistema.
+        </p>
         <Button onClick={() => navigate('/consulta')} className="w-full sm:w-auto">Voltar à pesquisa</Button>
       </div>
     );
   }
 
-  const vehicle = data[0];
+  const vehicle = data.length > 0 ? data[0] : { car: carInfo, brandModel: carInfo?.brandModel, plateNumber: carInfo?.plateNumber, vin: carInfo?.vin, mileage: 0 };
+  const recordsCount = data.length;
 
   return (
     <div className="min-h-screen bg-background">
@@ -77,42 +89,60 @@ const VehicleHistory = () => {
         </button>
         {/* Vehicle header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-lg p-4 md:p-6 shadow-card mb-6 md:mb-8">
-          <div className="flex flex-col gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-3">
-                <Car className="h-6 w-6 text-accent" />
-                <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">{vehicle.brandModel}</h1>
-              </div>
-              <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-muted-foreground">
-                <span className="font-mono font-medium text-foreground bg-muted px-2 py-1 rounded text-xs md:text-sm">{vehicle.plateNumber}</span>
-                {vehicle.vin && <span className="text-xs md:text-sm">VIN: {vehicle.vin}</span>}
-                <span className="text-xs md:text-sm">Última: {Math.max(...data.map(d => d.mileage)).toLocaleString()} km</span>
-              </div>
+          <div className="flex flex-col md:flex-row gap-6">
+            {/* Car Image Profile */}
+            <div className="w-full md:w-48 h-32 md:h-48 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
+               {vehicle.car?.photos && vehicle.car?.photos.length > 0 ? (
+                 <img 
+                   src={vehicle.car.photos[0]} 
+                   alt={vehicle.car.brandModel} 
+                   className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                   onClick={() => setLightbox({ photos: vehicle.car.photos, index: 0 })}
+                 />
+               ) : (
+                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
+                   <Car className="h-12 w-12" />
+                 </div>
+               )}
             </div>
 
-            {/* Mobile-first button layout */}
-            <div className="flex flex-col sm:flex-row gap-2">
-              <div className="inline-flex items-center gap-1.5 text-accent text-sm font-medium bg-accent/10 px-3 py-2 rounded-full w-fit">
-                <ShieldCheck className="h-4 w-4" />
-                {data.length} Registos Verificados
+            <div className="flex-1 flex flex-col gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <Car className="h-6 w-6 text-accent" />
+                  <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">{vehicle.car?.brandModel}</h1>
+                </div>
+                <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-muted-foreground">
+                  <span className="font-mono font-medium text-foreground bg-muted px-2 py-1 rounded text-xs md:text-sm">{vehicle.car?.plateNumber}</span>
+                  {vehicle.car?.vin && <span className="text-xs md:text-sm">VIN: {vehicle.car?.vin}</span>}
+                  <span className="text-xs md:text-sm">Última: {Math.max(...data.map(d => d.mileage)).toLocaleString()} km</span>
+                </div>
               </div>
 
+              {/* Mobile-first button layout */}
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5 w-full sm:w-auto">
-                  <Download className="mr-2 h-4 w-4" />
-                  <span className="hidden sm:inline">Exportar PDF</span>
-                  <span className="sm:hidden">PDF</span>
-                </Button>
-                {user?.role === "oficina" && (
-                  <Button
-                    size="sm"
-                    className="bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto"
-                    onClick={() => navigate(`/registar-servico?plate=${vehicle.plateNumber}${vehicle.vin ? `&vin=${vehicle.vin}` : ''}&brand=${encodeURIComponent(vehicle.brandModel)}`)}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Novo Serviço
+                <div className="inline-flex items-center gap-1.5 text-accent text-sm font-medium bg-accent/10 px-3 py-2 rounded-full w-fit">
+                  <ShieldCheck className="h-4 w-4" />
+                  {recordsCount} Registos Verificados
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5 w-full sm:w-auto">
+                    <Download className="mr-2 h-4 w-4" />
+                    <span className="hidden sm:inline">Exportar PDF</span>
+                    <span className="sm:hidden">PDF</span>
                   </Button>
-                )}
+                  {user?.role === "oficina" && (
+                    <Button
+                      size="sm"
+                      className="bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto"
+                      onClick={() => navigate(`/registar-servico?plate=${vehicle.car?.plateNumber}${vehicle.car?.vin ? `&vin=${vehicle.car?.vin}` : ''}&brand=${encodeURIComponent(vehicle.car?.brandModel)}`)}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Novo Serviço
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

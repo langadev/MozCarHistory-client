@@ -94,14 +94,18 @@ const BuyerSearch = () => {
               /* Vehicle summary */
               <div className="bg-card border border-border rounded-lg p-6 shadow-card mb-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-                    <Car className="h-6 w-6 text-accent" />
+                  <div className="w-12 h-12 rounded-lg overflow-hidden bg-accent/10 flex items-center justify-center shrink-0 border border-border">
+                    {results[0].car?.photos && results[0].car?.photos.length > 0 ? (
+                      <img src={results[0].car.photos[0]} alt="Car" className="w-full h-full object-cover" />
+                    ) : (
+                      <Car className="h-6 w-6 text-accent" />
+                    )}
                   </div>
                   <div>
                     <h2 className="font-display text-xl font-bold text-foreground">
-                      {results[0].brandModel}
+                      {results[0].car?.brandModel}
                     </h2>
-                    <p className="text-sm text-muted-foreground font-mono">{results[0].plateNumber}</p>
+                    <p className="text-sm text-muted-foreground font-mono">{results[0].car?.plateNumber}</p>
                   </div>
                 </div>
 
@@ -134,7 +138,7 @@ const BuyerSearch = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Link to={`/historico?plate=${results[0].plateNumber}`} className="flex-1">
+                  <Link to={`/historico?plate=${results[0].car?.plateNumber}`} className="flex-1">
                     <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                       <FileText className="mr-2 h-4 w-4" />
                       Ver Relatório Completo

@@ -32,8 +32,8 @@ const Catalog = () => {
     }, []);
 
     const filteredVehicles = vehicles.filter(v => 
-        v.brandModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        v.plateNumber.toLowerCase().includes(searchTerm.toLowerCase())
+        v.car?.brandModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        v.car?.plateNumber.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     return (
@@ -82,10 +82,10 @@ const Catalog = () => {
                             >
                                 {/* Video/Photo Placeholder or Real Photo */}
                                 <div className="aspect-video bg-muted relative overflow-hidden">
-                                    {vehicle.photos && vehicle.photos.length > 0 ? (
+                                    {(vehicle.car?.photos?.length || 0) > 0 || (vehicle.photos?.length || 0) > 0 ? (
                                         <img 
-                                            src={vehicle.photos[0]} 
-                                            alt={vehicle.brandModel}
+                                            src={vehicle.car?.photos?.[0] || vehicle.photos?.[0]} 
+                                            alt={vehicle.car?.brandModel}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         />
                                     ) : (
@@ -95,12 +95,12 @@ const Catalog = () => {
                                     )}
                                     <div className="absolute top-3 left-3">
                                         <div className="bg-background/90 backdrop-blur-sm px-2.5 py-1 rounded-md border border-border text-[10px] font-mono font-bold">
-                                            {vehicle.plateNumber}
+                                            {vehicle.car?.plateNumber}
                                         </div>
                                     </div>
-                                    {vehicle.photos?.length > 1 && (
+                                    {((vehicle.car?.photos?.length || 0) + (vehicle.photos?.length || 0)) > 1 && (
                                         <div className="absolute bottom-3 right-3 bg-black/50 backdrop-blur-sm text-white text-[10px] px-2 py-0.5 rounded-full">
-                                            +{vehicle.photos.length - 1} fotos
+                                            +{(vehicle.car?.photos?.length || 0) + (vehicle.photos?.length || 0) - 1} fotos
                                         </div>
                                     )}
                                 </div>
@@ -109,11 +109,11 @@ const Catalog = () => {
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
                                             <h3 className="font-display font-bold text-lg text-foreground group-hover:text-accent transition-colors">
-                                                {vehicle.brandModel}
+                                                {vehicle.car?.brandModel}
                                             </h3>
                                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                                                 <MapPin className="h-3 w-3" />
-                                                Última: {vehicle.workshop?.name}
+                                                Última: {vehicle.workshop?.name || "N/A"}
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1 text-accent bg-accent/10 px-2 py-1 rounded-full text-[10px] font-bold">
@@ -139,7 +139,7 @@ const Catalog = () => {
                                         </div>
                                     </div>
 
-                                    <Link to={`/historico?plate=${vehicle.plateNumber}`}>
+                                    <Link to={`/historico?plate=${vehicle.car?.plateNumber}`}>
                                         <Button className="w-full bg-accent hover:bg-accent/90 text-accent-foreground group/btn">
                                             Ver Histórico Completo
                                             <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover/btn:translate-x-1" />
