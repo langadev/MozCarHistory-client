@@ -5,13 +5,20 @@ export interface VehicleSummary {
   car: {
     plateNumber: string;
     vin?: string;
-    brandModel: string;
+    brand: string;
+    model: string;
+    year?: number | null;
+    color?: string | null;
+    fuelType?: string | null;
     photos?: string[];
   };
   mileage: number;
+  serviceType?: string | null;
   description: string;
-  parts?: string;
-  mechanic?: string;
+  parts?: string | null;
+  cost?: number | null;
+  nextServiceMileage?: number | null;
+  mechanic?: { id: number; name: string; specialty: string | null; photo: string | null } | null;
   date: string;
   workshopId: number;
   photos: string[];
@@ -22,8 +29,11 @@ export interface CreateRecordPayload {
   carId: number;
   mileage: number;
   description: string;
+  serviceType?: string;
   parts?: string;
-  mechanic?: string;
+  cost?: number;
+  nextServiceMileage?: number;
+  mechanicId?: number;
   workshopId: number;
   photos?: File[];
 }
@@ -36,7 +46,8 @@ export async function getAllVehicles(): Promise<VehicleSummary[]> {
     car: {
       plateNumber: car.plateNumber,
       vin: car.vin,
-      brandModel: car.brandModel,
+      brand: car.brand,
+      model: car.model,
       photos: car.photos,
     },
     mileage: car.records?.[0]?.mileage || 0,
@@ -68,8 +79,11 @@ export async function createRecord(payload: CreateRecordPayload, token?: string)
   formData.append("carId", String(payload.carId));
   formData.append("mileage", String(payload.mileage));
   formData.append("description", payload.description);
+  if (payload.serviceType) formData.append("serviceType", payload.serviceType);
   if (payload.parts) formData.append("parts", payload.parts);
-  if (payload.mechanic) formData.append("mechanic", payload.mechanic);
+  if (payload.cost) formData.append("cost", String(payload.cost));
+  if (payload.nextServiceMileage) formData.append("nextServiceMileage", String(payload.nextServiceMileage));
+  if (payload.mechanicId) formData.append("mechanicId", String(payload.mechanicId));
   formData.append("workshopId", String(payload.workshopId));
 
   payload.photos?.forEach((file) => formData.append("photos", file));
@@ -77,9 +91,6 @@ export async function createRecord(payload: CreateRecordPayload, token?: string)
   return apiFetch("/maintenance", {
     method: "POST",
     body: formData,
-    headers: {
-      ...withAuthToken(token),
-      // Let fetch set Content-Type for multipart
-    },
+    headers: { ...withAuthToken(token) },
   }, { ignoreJson: true });
 }

@@ -12,12 +12,15 @@ export async function apiFetch<T = any>(
   { ignoreJson = false }: { ignoreJson?: boolean } = {},
 ): Promise<T> {
   const url = `${API_BASE_URL}${path}`;
+  const isFormData = options.body instanceof FormData;
+
   const response = await fetch(url, {
+    ...options,
     headers: {
-      "Content-Type": "application/json",
+      // Only set JSON content-type for non-FormData bodies (browser sets multipart boundary automatically)
+      ...(!isFormData ? { "Content-Type": "application/json" } : {}),
       ...(options.headers || {}),
     },
-    ...options,
   });
 
   const text = await response.text();
@@ -30,7 +33,6 @@ export async function apiFetch<T = any>(
   }
 
   if (ignoreJson) {
-    // If consumer doesn't need JSON (eg: file download)
     return {} as T;
   }
 

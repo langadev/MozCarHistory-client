@@ -1,5 +1,9 @@
 import { motion } from "framer-motion";
-import { ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin, Gauge, Calendar, User, Loader2, Plus, X, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin,
+  Gauge, Calendar, User, Loader2, Plus, X, ChevronLeft,
+  ChevronRight, Fuel, Settings, DollarSign, Bell,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,17 +12,42 @@ import { searchRecordsByPlate, searchRecordsByVin } from "@/api/records";
 import { getCarByPlate } from "@/api/cars";
 import { useAuth } from "@/hooks/useAuth";
 
+const SERVICE_TYPE_COLORS: Record<string, string> = {
+  "Troca de Óleo": "bg-amber-500/10 text-amber-600 border-amber-200",
+  "Revisão Geral": "bg-blue-500/10 text-blue-600 border-blue-200",
+  "Travões / Freios": "bg-red-500/10 text-red-600 border-red-200",
+  "Pneus": "bg-slate-500/10 text-slate-600 border-slate-200",
+  "Motor": "bg-orange-500/10 text-orange-600 border-orange-200",
+  "Sistema Eléctrico": "bg-yellow-500/10 text-yellow-600 border-yellow-200",
+  "Transmissão / Caixa": "bg-purple-500/10 text-purple-600 border-purple-200",
+  "Suspensão": "bg-green-500/10 text-green-600 border-green-200",
+  "Filtros": "bg-teal-500/10 text-teal-600 border-teal-200",
+  "Ar Condicionado": "bg-sky-500/10 text-sky-600 border-sky-200",
+  "Diagnóstico": "bg-indigo-500/10 text-indigo-600 border-indigo-200",
+};
+
+function serviceTypeBadge(type: string | null | undefined) {
+  if (!type) return null;
+  const cls = SERVICE_TYPE_COLORS[type] ?? "bg-accent/10 text-accent border-accent/20";
+  return (
+    <span className={`inline-flex items-center text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cls}`}>
+      <Wrench className="h-2.5 w-2.5 mr-1" />
+      {type}
+    </span>
+  );
+}
+
 const VehicleHistory = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [data, setData] = useState<any[]>([]);
   const [carInfo, setCarInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [lightbox, setLightbox] = useState<{ photos: string[], index: number } | null>(null);
+  const [lightbox, setLightbox] = useState<{ photos: string[]; index: number } | null>(null);
   const { user, token } = useAuth();
 
-  const plate = searchParams.get('plate');
-  const vin = searchParams.get('vin');
+  const plate = searchParams.get("plate");
+  const vin = searchParams.get("vin");
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -31,11 +60,8 @@ const VehicleHistory = () => {
 
         if (result.length === 0 && plate) {
           const car = await getCarByPlate(plate, token ?? undefined);
-          if (car) {
-            setCarInfo(car);
-          } else {
-            toast.error("Nenhum histórico ou viatura encontrada.");
-          }
+          if (car) setCarInfo(car);
+          else toast.error("Nenhum histórico ou viatura encontrada.");
         }
       } catch (error: any) {
         console.error("Erro ao carregar histórico:", error);
@@ -45,11 +71,8 @@ const VehicleHistory = () => {
       }
     };
 
-    if (plate || vin) {
-      fetchHistory();
-    } else {
-      setIsLoading(false);
-    }
+    if (plate || vin) fetchHistory();
+    else setIsLoading(false);
   }, [plate, vin, token]);
 
   if (isLoading) {
@@ -68,13 +91,15 @@ const VehicleHistory = () => {
         <p className="text-muted-foreground mb-8 max-w-xs mx-auto">
           Não conseguimos encontrar registos para esta viatura no sistema.
         </p>
-        <Button onClick={() => navigate('/consulta')} className="w-full sm:w-auto">Voltar à pesquisa</Button>
+        <Button onClick={() => navigate("/consulta")} className="w-full sm:w-auto">Voltar à pesquisa</Button>
       </div>
     );
   }
 
-  const vehicle = data.length > 0 ? data[0] : { car: carInfo, brandModel: carInfo?.brandModel, plateNumber: carInfo?.plateNumber, vin: carInfo?.vin, mileage: 0 };
+  const car = data.length > 0 ? data[0].car : carInfo;
   const recordsCount = data.length;
+  const maxMileage = data.length > 0 ? Math.max(...data.map(d => d.mileage)) : null;
+  const nextServiceMileage = data.find(d => d.nextServiceMileage)?.nextServiceMileage ?? null;
 
   return (
     <div className="min-h-screen bg-background">
@@ -87,178 +112,259 @@ const VehicleHistory = () => {
           <span className="hidden sm:inline">Voltar para a pesquisa</span>
           <span className="sm:hidden">Voltar</span>
         </button>
+
         {/* Vehicle header */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-lg p-4 md:p-6 shadow-card mb-6 md:mb-8">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Car Image Profile */}
-            <div className="w-full md:w-48 h-32 md:h-48 rounded-lg overflow-hidden bg-muted border border-border shrink-0">
-               {vehicle.car?.photos && vehicle.car?.photos.length > 0 ? (
-                 <img 
-                   src={vehicle.car.photos[0]} 
-                   alt={vehicle.car.brandModel} 
-                   className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
-                   onClick={() => setLightbox({ photos: vehicle.car.photos, index: 0 })}
-                 />
-               ) : (
-                 <div className="w-full h-full flex items-center justify-center text-muted-foreground/30">
-                   <Car className="h-12 w-12" />
-                 </div>
-               )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-card border border-border rounded-lg overflow-hidden shadow-card mb-6 md:mb-8"
+        >
+          <div className="flex flex-col md:flex-row gap-0">
+            {/* Photo */}
+            <div className="w-full md:w-52 h-40 md:h-auto bg-muted shrink-0">
+              {car?.photos && car.photos.length > 0 ? (
+                <img
+                  src={car.photos[0]}
+                  alt={`${car?.brand} ${car?.model}`}
+                  className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform"
+                  onClick={() => setLightbox({ photos: car.photos, index: 0 })}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground/20">
+                  <Car className="h-16 w-16" />
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 flex flex-col gap-4">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <Car className="h-6 w-6 text-accent" />
-                  <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">{vehicle.car?.brandModel}</h1>
+            <div className="flex-1 p-4 md:p-6">
+              {/* Title */}
+              <div className="flex items-start justify-between gap-2 mb-3">
+                <div>
+                  <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">
+                    {car?.brand} {car?.model}
+                    {car?.year && <span className="text-muted-foreground font-normal text-base ml-2">({car.year})</span>}
+                  </h1>
+                  <div className="flex flex-wrap gap-2 mt-1.5">
+                    <span className="font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded text-sm">{car?.plateNumber}</span>
+                    {car?.vin && <span className="text-xs text-muted-foreground self-center font-mono">VIN: {car.vin}</span>}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2 md:gap-4 text-sm text-muted-foreground">
-                  <span className="font-mono font-medium text-foreground bg-muted px-2 py-1 rounded text-xs md:text-sm">{vehicle.car?.plateNumber}</span>
-                  {vehicle.car?.vin && <span className="text-xs md:text-sm">VIN: {vehicle.car?.vin}</span>}
-                  <span className="text-xs md:text-sm">Última: {Math.max(...data.map(d => d.mileage)).toLocaleString()} km</span>
+                <div className="inline-flex items-center gap-1.5 text-accent text-xs font-semibold bg-accent/10 px-3 py-1.5 rounded-full shrink-0">
+                  <ShieldCheck className="h-3.5 w-3.5" />
+                  {recordsCount} Registo{recordsCount !== 1 ? "s" : ""}
                 </div>
               </div>
 
-              {/* Mobile-first button layout */}
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="inline-flex items-center gap-1.5 text-accent text-sm font-medium bg-accent/10 px-3 py-2 rounded-full w-fit">
-                  <ShieldCheck className="h-4 w-4" />
-                  {recordsCount} Registos Verificados
-                </div>
+              {/* Car attributes */}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4 text-sm text-muted-foreground">
+                {car?.color && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2.5 w-2.5 rounded-full bg-muted-foreground/40" />
+                    {car.color}
+                  </span>
+                )}
+                {car?.fuelType && (
+                  <span className="flex items-center gap-1.5">
+                    <Fuel className="h-3.5 w-3.5" /> {car.fuelType}
+                  </span>
+                )}
+                {car?.transmission && (
+                  <span className="flex items-center gap-1.5">
+                    <Settings className="h-3.5 w-3.5" /> {car.transmission}
+                  </span>
+                )}
+                {car?.bodyType && (
+                  <span className="flex items-center gap-1.5">
+                    <Car className="h-3.5 w-3.5" /> {car.bodyType}
+                  </span>
+                )}
+                {car?.engineSize && (
+                  <span className="text-xs text-muted-foreground">Motor: {car.engineSize}</span>
+                )}
+              </div>
 
-                <div className="flex flex-col sm:flex-row gap-2">
-                  <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5 w-full sm:w-auto">
-                    <Download className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline">Exportar PDF</span>
-                    <span className="sm:hidden">PDF</span>
+              {/* Stats row */}
+              <div className="flex flex-wrap gap-3 mb-4">
+                {maxMileage !== null && (
+                  <div className="flex items-center gap-1.5 bg-muted/60 px-3 py-1.5 rounded-lg text-sm">
+                    <Gauge className="h-4 w-4 text-accent" />
+                    <span className="text-muted-foreground text-xs">Última km:</span>
+                    <span className="font-bold text-foreground">{maxMileage.toLocaleString("pt-PT")} km</span>
+                  </div>
+                )}
+                {nextServiceMileage && (
+                  <div className="flex items-center gap-1.5 bg-amber-500/5 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
+                    <Bell className="h-4 w-4 text-amber-500" />
+                    <span className="text-xs text-amber-600">Próximo serviço:</span>
+                    <span className="font-bold text-amber-700">{nextServiceMileage.toLocaleString("pt-PT")} km</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5 w-full sm:w-auto">
+                  <Download className="mr-2 h-4 w-4" />
+                  <span className="hidden sm:inline">Exportar PDF</span>
+                  <span className="sm:hidden">PDF</span>
+                </Button>
+                {(user?.role === "oficina" || user?.role === "mecanico") && (
+                  <Button
+                    size="sm"
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto"
+                    onClick={() =>
+                      navigate(
+                        user.role === "mecanico"
+                          ? `/mecanico/registar-servico?plate=${car?.plateNumber}`
+                          : `/registar-servico?plate=${car?.plateNumber}`,
+                      )
+                    }
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Novo Serviço
                   </Button>
-                  {user?.role === "oficina" && (
-                    <Button
-                      size="sm"
-                      className="bg-accent text-accent-foreground hover:bg-accent/90 w-full sm:w-auto"
-                      onClick={() => navigate(`/registar-servico?plate=${vehicle.car?.plateNumber}${vehicle.car?.vin ? `&vin=${vehicle.car?.vin}` : ''}&brand=${encodeURIComponent(vehicle.car?.brandModel)}`)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Novo Serviço
-                    </Button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           </div>
         </motion.div>
 
+        {/* No records yet */}
+        {recordsCount === 0 && (
+          <div className="bg-card border border-dashed border-border rounded-lg p-10 text-center">
+            <Wrench className="h-10 w-10 text-muted-foreground/20 mx-auto mb-3" />
+            <p className="text-muted-foreground text-sm">Esta viatura ainda não tem serviços registados.</p>
+          </div>
+        )}
+
         {/* Timeline */}
-        <div className="relative">
-          {/* Timeline line - hidden on mobile for cleaner look */}
-          <div className="hidden md:block absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
+        {recordsCount > 0 && (
+          <div className="relative">
+            <div className="hidden md:block absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
 
-          {data.map((record, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="relative pl-4 md:pl-14 pb-6 md:pb-8"
-            >
-              {/* Timeline dot - adjusted for mobile */}
-              <div className={`hidden md:block absolute left-4 w-5 h-5 rounded-full border-2 bg-accent/20 border-accent`}>
-                <div className="absolute inset-1 rounded-full bg-accent" />
-              </div>
+            {data.map((record, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.07 }}
+                className="relative pl-4 md:pl-14 pb-6 md:pb-8"
+              >
+                <div className="hidden md:block absolute left-4 w-5 h-5 rounded-full border-2 bg-accent/20 border-accent">
+                  <div className="absolute inset-1 rounded-full bg-accent" />
+                </div>
 
-              <div className="bg-card border border-border rounded-lg p-4 md:p-5 shadow-card transition-shadow hover:shadow-card-hover">
-                {/* Mobile-first metadata layout */}
-                <div className="flex flex-col gap-2 md:gap-3 mb-4">
-                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                      <Calendar className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {new Date(record.date).toLocaleDateString('pt-PT')}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground font-medium text-foreground bg-muted/50 px-2 py-1 rounded">
-                      <MapPin className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {record.workshop?.name}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                    {record.mechanic && (
+                <div className="bg-card border border-border rounded-lg p-4 md:p-5 shadow-card hover:shadow-card-hover transition-shadow">
+                  {/* Header */}
+                  <div className="flex flex-col gap-2 mb-4">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {serviceTypeBadge(record.serviceType)}
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                        <User className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                        {record.mechanic}
+                        <Calendar className="h-3.5 w-3.5" />
+                        {new Date(record.date).toLocaleDateString("pt-PT", { day: "numeric", month: "short", year: "numeric" })}
                       </div>
-                    )}
-                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                      <Gauge className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                      {record.mileage.toLocaleString()} km
+                      <div className="flex items-center gap-1.5 text-sm font-medium bg-muted/50 px-2 py-1 rounded">
+                        <Gauge className="h-3.5 w-3.5 text-accent" />
+                        {record.mileage.toLocaleString("pt-PT")} km
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {record.workshop?.name}
+                      </div>
+                      {record.mechanic?.name && (
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                          <User className="h-3.5 w-3.5" />
+                          {record.mechanic.name}
+                          {record.mechanic.specialty && (
+                            <span className="text-muted-foreground/60">· {record.mechanic.specialty}</span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                <div className="mb-4 text-sm text-foreground">
-                  <p className="font-semibold mb-2 text-base">Serviço Realizado:</p>
-                  <p className="text-muted-foreground leading-relaxed">{record.description}</p>
-                </div>
-
-                {record.parts && (
+                  {/* Description */}
                   <div className="mb-4">
-                    <p className="text-sm font-semibold mb-2">Peças Substituídas:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {record.parts.split(',').map((s, j) => (
-                        <span key={j} className="text-xs bg-muted px-2.5 py-1.5 rounded-md text-muted-foreground">
-                          {s.trim()}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="font-semibold text-sm mb-1 text-foreground">Serviço Realizado</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{record.description}</p>
                   </div>
-                )}
 
-                {record.photos && record.photos.length > 0 && (
-                  <div className="mb-4">
-                    <p className="text-sm font-semibold mb-2">Fotos do Serviço:</p>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                      {record.photos.map((photo: string, idx: number) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => setLightbox({ photos: record.photos, index: idx })}
-                          className="aspect-square rounded-md overflow-hidden border border-border hover:border-accent transition-colors block p-0"
-                        >
-                          <img
-                            src={photo}
-                            alt={`Serviço ${idx + 1}`}
-                            className="w-full h-full object-cover"
-                          />
-                        </button>
-                      ))}
+                  {/* Parts */}
+                  {record.parts && (
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold mb-2 text-foreground">Peças Substituídas</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {record.parts.split(",").map((s: string, j: number) => (
+                          <span key={j} className="text-xs bg-muted px-2.5 py-1.5 rounded-md text-muted-foreground">
+                            {s.trim()}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Status badge - improved mobile spacing */}
-                <div className="pt-2 border-t border-border">
-                  {record.verified ? (
-                    <span className="inline-flex items-center gap-1.5 text-accent text-sm font-medium">
+                  {/* Cost & next service */}
+                  {(record.cost || record.nextServiceMileage) && (
+                    <div className="flex flex-wrap gap-3 mb-4">
+                      {record.cost && (
+                        <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg text-sm">
+                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-muted-foreground text-xs">Custo:</span>
+                          <span className="font-bold text-foreground">{record.cost.toLocaleString("pt-PT")} MT</span>
+                        </div>
+                      )}
+                      {record.nextServiceMileage && (
+                        <div className="flex items-center gap-1.5 bg-amber-500/5 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
+                          <Bell className="h-3.5 w-3.5 text-amber-500" />
+                          <span className="text-xs text-amber-600">Próximo:</span>
+                          <span className="font-bold text-amber-700">{record.nextServiceMileage.toLocaleString("pt-PT")} km</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Photos */}
+                  {record.photos && record.photos.length > 0 && (
+                    <div className="mb-4">
+                      <p className="text-sm font-semibold mb-2 text-foreground">Fotos do Serviço</p>
+                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                        {record.photos.map((photo: string, idx: number) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => setLightbox({ photos: record.photos, index: idx })}
+                            className="aspect-square rounded-md overflow-hidden border border-border hover:border-accent transition-colors block p-0"
+                          >
+                            <img src={photo} alt={`Serviço ${idx + 1}`} className="w-full h-full object-cover" />
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="pt-2 border-t border-border">
+                    <span className="inline-flex items-center gap-1.5 text-accent text-xs font-medium">
                       <ShieldCheck className="h-4 w-4" /> Registo Verificado
                     </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 text-warning text-sm font-medium">
-                      <AlertTriangle className="h-4 w-4" /> Verificação Pendente
-                    </span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
-      
-      {/* Lightbox Modal */}
+
+      {/* Lightbox */}
       {lightbox && (
-        <div 
+        <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightbox(null)}
         >
-          <button 
+          <button
             type="button"
             className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors p-2"
             onClick={() => setLightbox(null)}
@@ -268,34 +374,38 @@ const VehicleHistory = () => {
 
           {lightbox.photos.length > 1 && (
             <button
-               type="button"
-               className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2 z-50"
-               onClick={(e) => {
-                 e.stopPropagation();
-                 setLightbox(prev => prev ? { ...prev, index: (prev.index - 1 + prev.photos.length) % prev.photos.length } : null);
-               }}
+              type="button"
+              className="absolute left-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2 z-50"
+              onClick={e => {
+                e.stopPropagation();
+                setLightbox(prev =>
+                  prev ? { ...prev, index: (prev.index - 1 + prev.photos.length) % prev.photos.length } : null,
+                );
+              }}
             >
               <ChevronLeft className="h-10 w-10 sm:h-14 sm:w-14" />
             </button>
           )}
 
           <div className="relative max-w-[90vw] max-h-[90vh]">
-            <img 
-              src={lightbox.photos[lightbox.index]} 
-              alt="Preview em ecrã inteiro" 
-              className="max-h-[90vh] max-w-full rounded-md object-contain shadow-2xl transition-opacity duration-300"
-              onClick={(e) => e.stopPropagation()}
+            <img
+              src={lightbox.photos[lightbox.index]}
+              alt="Preview"
+              className="max-h-[90vh] max-w-full rounded-md object-contain shadow-2xl"
+              onClick={e => e.stopPropagation()}
             />
           </div>
 
           {lightbox.photos.length > 1 && (
             <button
-               type="button"
-               className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2 z-50"
-               onClick={(e) => {
-                 e.stopPropagation();
-                 setLightbox(prev => prev ? { ...prev, index: (prev.index + 1) % prev.photos.length } : null);
-               }}
+              type="button"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-gray-300 p-2 z-50"
+              onClick={e => {
+                e.stopPropagation();
+                setLightbox(prev =>
+                  prev ? { ...prev, index: (prev.index + 1) % prev.photos.length } : null,
+                );
+              }}
             >
               <ChevronRight className="h-10 w-10 sm:h-14 sm:w-14" />
             </button>

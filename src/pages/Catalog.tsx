@@ -32,7 +32,7 @@ const Catalog = () => {
     }, []);
 
     const filteredVehicles = vehicles.filter(v => 
-        v.car?.brandModel.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        `${v.car?.brand ?? ''} ${v.car?.model ?? ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
         v.car?.plateNumber.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -85,7 +85,7 @@ const Catalog = () => {
                                     {(vehicle.car?.photos?.length || 0) > 0 || (vehicle.photos?.length || 0) > 0 ? (
                                         <img 
                                             src={vehicle.car?.photos?.[0] || vehicle.photos?.[0]} 
-                                            alt={vehicle.car?.brandModel}
+                                            alt={`${vehicle.car?.brand} ${vehicle.car?.model}`}
                                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                                         />
                                     ) : (
@@ -109,7 +109,7 @@ const Catalog = () => {
                                     <div className="flex justify-between items-start mb-3">
                                         <div>
                                             <h3 className="font-display font-bold text-lg text-foreground group-hover:text-accent transition-colors">
-                                                {vehicle.car?.brandModel}
+                                                {vehicle.car?.brand} {vehicle.car?.model}
                                             </h3>
                                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                                                 <MapPin className="h-3 w-3" />

@@ -5,7 +5,8 @@ interface User {
   id: number;
   email: string;
   name: string;
-  role: 'oficina' | 'comprador';
+  role: 'oficina' | 'comprador' | 'admin' | 'mecanico';
+  mustChangePassword?: boolean;
 }
 
 interface AuthContextType {
@@ -40,10 +41,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setToken(token);
     localStorage.setItem('auth_token', token);
     localStorage.setItem('auth_user', JSON.stringify(userData));
-    
-    // Redirect based on role
-    if (userData.role === 'oficina') {
+
+    if (userData.role === 'admin') {
+      navigate('/admin');
+    } else if (userData.role === 'oficina') {
       navigate('/dashboard');
+    } else if (userData.role === 'mecanico') {
+      navigate(userData.mustChangePassword ? '/alterar-senha' : '/mecanico/dashboard');
     } else {
       navigate('/consulta');
     }

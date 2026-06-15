@@ -221,7 +221,7 @@ const Dashboard = () => {
                       {car.photos && car.photos.length > 0 ? (
                         <img 
                           src={car.photos[0]} 
-                          alt={car.brandModel} 
+                          alt={`${car.brand} ${car.model}`}
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                       ) : (
@@ -236,7 +236,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <div className="p-2 border-t border-border bg-card">
-                      <div className="text-[10px] font-bold text-foreground truncate">{car.brandModel}</div>
+                      <div className="text-[10px] font-bold text-foreground truncate">{car.brand} {car.model}</div>
                     </div>
                   </Link>
                 </motion.div>
@@ -277,7 +277,7 @@ const Dashboard = () => {
                   records.slice(0, 5).map((row, i) => (
                     <tr key={i} className="border-t border-border hover:bg-muted/30 transition-colors">
                       <td className="p-3 font-mono font-medium text-foreground">{row.car?.plateNumber}</td>
-                      <td className="p-3 text-foreground">{row.car?.brandModel}</td>
+                      <td className="p-3 text-foreground">{row.car?.brand} {row.car?.model}</td>
                       <td className="p-3 text-muted-foreground truncate max-w-[200px]">{row.description}</td>
                       <td className="p-3 text-muted-foreground">{new Date(row.date).toLocaleDateString('pt-PT')}</td>
                       <td className="p-3">

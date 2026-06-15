@@ -3,7 +3,7 @@ import { apiFetch, withAuthToken } from "./client";
 export interface LoginPayload {
   email: string;
   password: string;
-  role: "oficina" | "comprador";
+  role?: "oficina" | "comprador" | "mecanico";
 }
 
 export interface RegisterPayload {
@@ -22,7 +22,8 @@ export interface AuthResponse {
     id: number;
     email: string;
     name: string;
-    role: "oficina" | "comprador";
+    role: "oficina" | "comprador" | "admin" | "mecanico";
+    mustChangePassword: boolean;
   };
 }
 
@@ -40,10 +41,14 @@ export async function register(payload: RegisterPayload): Promise<AuthResponse> 
   });
 }
 
-export async function refreshMe(token: string) {
-  // Example endpoint if added; placeholder for future
-  return apiFetch("/auth/me", {
-    method: "GET",
-    headers: withAuthToken(token),
+export async function changePassword(
+  token: string,
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  return apiFetch("/auth/change-password", {
+    method: "PATCH",
+    body: JSON.stringify({ currentPassword, newPassword }),
+    ...{ headers: withAuthToken(token) },
   });
 }

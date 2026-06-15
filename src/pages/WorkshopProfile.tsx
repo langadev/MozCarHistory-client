@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Star, MapPin, Phone, Mail, Calendar, Wrench, Award, MoveLeft, Loader2 } from "lucide-react";
+import { ShieldCheck, Star, MapPin, Phone, Mail, Calendar, Wrench, Award, Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { getWorkshopRecords, VehicleSummary } from "@/api/records";
 
 const WorkshopProfile = () => {
   const { user, token } = useAuth();
-  const navigate = useNavigate();
   const [records, setRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -32,13 +30,6 @@ const WorkshopProfile = () => {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-accent font-medium mb-6 transition-colors group"
-        >
-          <MoveLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          Voltar
-        </button>
         {/* Profile header */}
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card border border-border rounded-lg shadow-card overflow-hidden mb-8">
           <div className="gradient-hero p-8">
@@ -116,8 +107,8 @@ const WorkshopProfile = () => {
               records.map((item, i) => (
                 <div key={i} className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
                   <div>
-                    <div className="font-medium text-sm text-foreground">{item.brandModel}</div>
-                    <div className="text-xs text-muted-foreground">{item.plateNumber} · {item.description}</div>
+                    <div className="font-medium text-sm text-foreground">{item.car?.brand} {item.car?.model}</div>
+                    <div className="text-xs text-muted-foreground">{item.car?.plateNumber} · {item.description}</div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-muted-foreground">
