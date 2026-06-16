@@ -1,34 +1,44 @@
 import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { getUnreadCount } from "@/api/messages";
 import {
   LayoutDashboard, Car, Wrench, Search, Grid3X3, User, LogOut, Shield,
-  UserCog, AlertTriangle, Menu, List, ClipboardList,
+  UserCog, AlertTriangle, Menu, List, ClipboardList, MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/registar-viatura", label: "Registar Viatura", icon: Car },
-  { to: "/minhas-viaturas", label: "As Minhas Viaturas", icon: List },
-  { to: "/registar-servico", label: "Registar Serviço", icon: Wrench },
-  { to: "/meus-registos", label: "Os Meus Registos", icon: ClipboardList },
-  { to: "/mecanicos", label: "Mecânicos", icon: UserCog },
-  { to: "/veiculos", label: "Catálogo", icon: Grid3X3 },
-  { to: "/consulta", label: "Consultar Histórico", icon: Search },
-  { to: "/perfil-oficina", label: "Perfil da Oficina", icon: User },
-];
-
 const WorkshopLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unread-count"],
+    queryFn: () => getUnreadCount(token!),
+    enabled: !!token,
+    refetchInterval: 30_000,
+  });
+
+  const navItems = [
+    { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true, badge: 0 },
+    { to: "/registar-viatura", label: "Registar Viatura", icon: Car, badge: 0 },
+    { to: "/minhas-viaturas", label: "As Minhas Viaturas", icon: List, badge: 0 },
+    { to: "/registar-servico", label: "Registar Serviço", icon: Wrench, badge: 0 },
+    { to: "/meus-registos", label: "Os Meus Registos", icon: ClipboardList, badge: 0 },
+    { to: "/mecanicos", label: "Mecânicos", icon: UserCog, badge: 0 },
+    { to: "/mensagens", label: "Mensagens", icon: MessageSquare, badge: unreadCount },
+    { to: "/veiculos", label: "Catálogo", icon: Grid3X3, badge: 0 },
+    { to: "/consulta", label: "Consultar Histórico", icon: Search, badge: 0 },
+    { to: "/perfil-oficina", label: "Perfil da Oficina", icon: User, badge: 0 },
+  ];
 
   const NavContent = ({ onNav }: { onNav?: () => void }) => (
     <>
       <nav className="flex-1 space-y-1 px-3 py-4">
-        {navItems.map(({ to, label, icon: Icon, end }) => (
+        {navItems.map(({ to, label, icon: Icon, end, badge }) => (
           <NavLink
             key={to}
             to={to}
@@ -44,7 +54,12 @@ const WorkshopLayout = ({ children }: { children: React.ReactNode }) => {
             }
           >
             <Icon className="h-4 w-4 shrink-0" />
-            {label}
+            <span className="flex-1">{label}</span>
+            {badge > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-accent px-1.5 text-[10px] font-bold text-accent-foreground">
+                {badge}
+              </span>
+            )}
           </NavLink>
         ))}
       </nav>

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
+import { SocketProvider } from "@/context/SocketContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WorkshopLayout from "@/components/layout/WorkshopLayout";
@@ -25,6 +26,8 @@ import AdminWorkshopDetail from "./pages/admin/AdminWorkshopDetail";
 import WorkshopMechanics from "./pages/WorkshopMechanics";
 import WorkshopVehicles from "./pages/WorkshopVehicles";
 import WorkshopRecords from "./pages/WorkshopRecords";
+import Messages from "./pages/Messages";
+import AdminMessages from "./pages/admin/AdminMessages";
 import MechanicDashboard from "./pages/mecanico/MechanicDashboard";
 import MechanicServiceForm from "./pages/mecanico/MechanicServiceForm";
 import ChangePassword from "./pages/ChangePassword";
@@ -39,7 +42,7 @@ import AdminRoute from "@/components/auth/AdminRoute";
 const queryClient = new QueryClient();
 
 // Paths that always use WorkshopLayout (oficina-only)
-const WORKSHOP_OWNED = ["/dashboard", "/registar-viatura", "/registar-servico", "/perfil-oficina", "/mecanicos", "/minhas-viaturas", "/meus-registos"];
+const WORKSHOP_OWNED = ["/dashboard", "/registar-viatura", "/registar-servico", "/perfil-oficina", "/mecanicos", "/minhas-viaturas", "/meus-registos", "/mensagens"];
 // Paths that always use MechanicLayout
 const MECHANIC_OWNED = ["/mecanico/dashboard", "/mecanico/registar-servico"];
 // Public paths that oficina users should also see with the sidebar
@@ -115,6 +118,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
+          <SocketProvider>
           <MainLayout>
             <Routes>
               {/* Admin routes */}
@@ -123,6 +127,7 @@ const App = () => (
               <Route path="/admin/oficinas" element={<AdminRoute><AdminWorkshops /></AdminRoute>} />
               <Route path="/admin/viaturas" element={<AdminRoute><AdminVehicles /></AdminRoute>} />
               <Route path="/admin/oficinas/:id" element={<AdminRoute><AdminWorkshopDetail /></AdminRoute>} />
+              <Route path="/admin/mensagens" element={<AdminRoute><AdminMessages /></AdminRoute>} />
 
               {/* Workshop routes — sidebar layout */}
               <Route path="/dashboard" element={<WorkshopRoute><Dashboard /></WorkshopRoute>} />
@@ -132,6 +137,7 @@ const App = () => (
               <Route path="/mecanicos" element={<WorkshopRoute><WorkshopMechanics /></WorkshopRoute>} />
               <Route path="/minhas-viaturas" element={<WorkshopRoute><WorkshopVehicles /></WorkshopRoute>} />
               <Route path="/meus-registos" element={<WorkshopRoute><WorkshopRecords /></WorkshopRoute>} />
+              <Route path="/mensagens" element={<WorkshopRoute><Messages /></WorkshopRoute>} />
 
               {/* Mechanic routes */}
               <Route path="/mecanico/dashboard" element={<MechanicRoute><MechanicDashboard /></MechanicRoute>} />
@@ -159,6 +165,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </MainLayout>
+          </SocketProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

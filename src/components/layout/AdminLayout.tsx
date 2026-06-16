@@ -3,7 +3,8 @@ import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminStats } from "@/api/admin";
-import { LayoutDashboard, Users, Building2, Car, LogOut, Shield, Menu } from "lucide-react";
+import { getUnreadCount } from "@/api/messages";
+import { LayoutDashboard, Users, Building2, Car, LogOut, Shield, Menu, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,13 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     staleTime: 60_000,
   });
 
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ["unread-count"],
+    queryFn: () => getUnreadCount(token!),
+    enabled: !!token,
+    refetchInterval: 30_000,
+  });
+
   const pendingCount = stats?.pendingVehicles ?? 0;
 
   const navItems = [
@@ -26,6 +34,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { to: "/admin/utilizadores", label: "Utilizadores", icon: Users, badge: 0 },
     { to: "/admin/oficinas", label: "Oficinas", icon: Building2, badge: 0 },
     { to: "/admin/viaturas", label: "Viaturas", icon: Car, badge: pendingCount },
+    { to: "/admin/mensagens", label: "Mensagens", icon: MessageSquare, badge: unreadCount },
   ];
 
   const NavContent = ({ onNav }: { onNav?: () => void }) => (
