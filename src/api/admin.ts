@@ -9,8 +9,14 @@ export interface AdminStats {
   recentRecords: {
     id: number;
     date: string;
-    car: { plateNumber: string; brand: string; model: string };
-    workshop: { name: string };
+    createdAt: string;
+    mileage: number;
+    serviceType: string | null;
+    description: string;
+    cost: number | null;
+    car: { plateNumber: string; brand: string; model: string; photos: string[] };
+    workshop: { id: number; name: string | null };
+    mechanic: { name: string; specialty: string | null } | null;
   }[];
 }
 

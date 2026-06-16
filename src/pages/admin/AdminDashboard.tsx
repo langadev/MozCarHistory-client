@@ -1,12 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { getAdminStats, getAdminFinanceStats } from "@/api/admin";
+import { getAdminStats, getAdminFinanceStats, type AdminStats } from "@/api/admin";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Users, Building2, Car, FileText, Loader2, Clock,
   TrendingUp, TrendingDown, DollarSign, Wrench, BarChart3,
+  UserCog, Calendar, History,
 } from "lucide-react";
+import { useState } from "react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -47,6 +49,144 @@ const statCards = (stats: {
   { label: "Registos", value: stats.totalRecords, icon: FileText, highlight: false },
   { label: "Pendentes", value: stats.pendingVehicles, icon: Clock, highlight: stats.pendingVehicles > 0 },
 ];
+
+type RecentRecord = AdminStats["recentRecords"][number];
+
+function RecentRecordsSection({ records }: { records: RecentRecord[] }) {
+  const [search, setSearch] = useState("");
+  const [show, setShow] = useState(10);
+
+  const filtered = records.filter(r =>
+    !search ||
+    r.car.plateNumber.toLowerCase().includes(search.toLowerCase()) ||
+    (r.workshop.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (r.mechanic?.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (r.serviceType ?? "").toLowerCase().includes(search.toLowerCase()),
+  );
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <History className="h-5 w-5 text-accent" />
+        <h2 className="text-lg font-semibold">Histórico de Registos</h2>
+        <span className="text-sm text-muted-foreground ml-1">({records.length} mais recentes)</span>
+      </div>
+
+      {/* Search */}
+      <div className="relative max-w-sm mb-4">
+        <Car className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <input
+          className="flex h-9 w-full rounded-md border border-input bg-background pl-9 pr-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          placeholder="Filtrar por matrícula, oficina, mecânico..."
+          value={search}
+          onChange={e => { setSearch(e.target.value); setShow(10); }}
+        />
+      </div>
+
+      {filtered.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-6 text-center">Nenhum registo encontrado.</p>
+      ) : (
+        <>
+          <div className="space-y-2">
+            {filtered.slice(0, show).map(r => (
+              <div
+                key={r.id}
+                className="bg-card border border-border rounded-xl p-4 hover:border-accent/30 transition-colors"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  {/* Car photo */}
+                  {r.car.photos?.[0] && (
+                    <div className="hidden sm:block h-14 w-20 shrink-0 rounded-lg overflow-hidden bg-muted">
+                      <img src={r.car.photos[0]} alt="" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+
+                  {/* Main info */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    {/* Row 1: plate + service type */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Link
+                        to={`/historico?plate=${encodeURIComponent(r.car.plateNumber)}`}
+                        className="font-mono font-bold text-sm text-foreground hover:text-accent transition-colors"
+                      >
+                        {r.car.plateNumber}
+                      </Link>
+                      <span className="text-sm text-muted-foreground">{r.car.brand} {r.car.model}</span>
+                      {r.serviceType && (
+                        <span className="text-[10px] font-semibold bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+                          {r.serviceType}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Row 2: description */}
+                    <p className="text-sm text-foreground/80 line-clamp-1">{r.description}</p>
+
+                    {/* Row 3: meta */}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      {/* Workshop */}
+                      <span className="flex items-center gap-1">
+                        <Building2 className="h-3 w-3" />
+                        <Link
+                          to={`/admin/oficinas/${r.workshop.id}`}
+                          className="hover:text-accent transition-colors"
+                        >
+                          {r.workshop.name ?? "—"}
+                        </Link>
+                      </span>
+
+                      {/* Mechanic */}
+                      {r.mechanic && (
+                        <span className="flex items-center gap-1">
+                          <UserCog className="h-3 w-3" />
+                          {r.mechanic.name}
+                          {r.mechanic.specialty && (
+                            <span className="text-muted-foreground/60">· {r.mechanic.specialty}</span>
+                          )}
+                        </span>
+                      )}
+
+                      {/* Mileage */}
+                      <span className="flex items-center gap-1">
+                        <Car className="h-3 w-3" />
+                        {r.mileage.toLocaleString("pt-PT")} km
+                      </span>
+
+                      {/* Cost */}
+                      {r.cost && (
+                        <span className="font-semibold text-foreground">{r.cost.toLocaleString("pt-PT")} MT</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Date/Time column */}
+                  <div className="flex flex-row sm:flex-col items-center sm:items-end gap-3 sm:gap-1 shrink-0 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1 font-medium text-foreground">
+                      <Calendar className="h-3 w-3" />
+                      {format(new Date(r.date), "dd MMM yyyy", { locale: ptBR })}
+                    </span>
+                    <span className="text-muted-foreground/70">
+                      Registado {format(new Date(r.createdAt), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {filtered.length > show && (
+            <button
+              onClick={() => setShow(s => s + 10)}
+              className="mt-3 w-full rounded-lg border border-dashed border-border py-2.5 text-sm text-muted-foreground hover:text-accent hover:border-accent/50 transition-colors"
+            >
+              Ver mais {Math.min(10, filtered.length - show)} registos
+            </button>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
 
 const AdminDashboard = () => {
   const { token } = useAuth();
@@ -99,30 +239,6 @@ const AdminDashboard = () => {
             <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-medium">Actividade Recente (registos)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {data.recentRecords.map((r) => (
-                      <div key={r.id} className="flex items-center justify-between text-sm">
-                        <div>
-                          <p className="font-medium">{r.car.plateNumber} — {r.car.brand} {r.car.model}</p>
-                          <p className="text-xs text-muted-foreground">{r.workshop.name}</p>
-                        </div>
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(r.date), "dd MMM yyyy", { locale: ptBR })}
-                        </span>
-                      </div>
-                    ))}
-                    {data.recentRecords.length === 0 && (
-                      <p className="text-sm text-muted-foreground">Sem registos recentes.</p>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
                   <CardTitle className="text-sm font-medium">Visão Geral de Utilizadores</CardTitle>
                 </CardHeader>
                 <CardContent className="flex items-center justify-center pt-2">
@@ -148,6 +264,9 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
+
+            {/* ── Histórico de Registos ── */}
+            <RecentRecordsSection records={data.recentRecords} />
           </>
         ) : null}
 
