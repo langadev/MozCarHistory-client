@@ -11,7 +11,11 @@ export interface Car {
   fuelType?: string | null;
   transmission?: string | null;
   engineSize?: string | null;
+  engineType?: string | null;
+  driveType?: string | null;
   bodyType?: string | null;
+  importYear?: number | null;
+  situation?: string | null;
   initialMileage?: number | null;
   approvalStatus?: string | null;
   approvalNote?: string | null;
@@ -35,8 +39,12 @@ export interface CreateCarPayload {
   fuelType?: string;
   transmission?: string;
   engineSize?: string;
+  engineType?: string;
+  driveType?: string;
   bodyType?: string;
   initialMileage?: number;
+  importYear?: number;
+  situation?: string;
   ownerId?: number;
   photos?: File[];
 }
@@ -52,8 +60,12 @@ export async function createCar(payload: CreateCarPayload, token?: string) {
   if (payload.fuelType) formData.append("fuelType", payload.fuelType);
   if (payload.transmission) formData.append("transmission", payload.transmission);
   if (payload.engineSize) formData.append("engineSize", payload.engineSize);
+  if (payload.engineType) formData.append("engineType", payload.engineType);
+  if (payload.driveType) formData.append("driveType", payload.driveType);
   if (payload.bodyType) formData.append("bodyType", payload.bodyType);
   if (payload.initialMileage) formData.append("initialMileage", String(payload.initialMileage));
+  if (payload.importYear) formData.append("importYear", String(payload.importYear));
+  if (payload.situation) formData.append("situation", payload.situation);
   if (payload.ownerId) formData.append("ownerId", String(payload.ownerId));
   payload.photos?.forEach(file => formData.append("photos", file));
 

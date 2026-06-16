@@ -1,6 +1,9 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Car, Save, Hash, Plus, Loader2, Camera, Fuel, Settings, Calendar, Palette, AlertTriangle } from "lucide-react";
+import {
+  Car, Save, Hash, Plus, Loader2, Camera, Fuel, Settings, Calendar,
+  Palette, AlertTriangle, Gauge, Globe,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +19,18 @@ const BRANDS = [
 ];
 
 const FUEL_TYPES = ["Gasolina", "Gasóleo", "Eléctrico", "Híbrido", "GPL"];
-const TRANSMISSIONS = ["Manual", "Automático"];
+const ENGINE_TYPES = ["Aspirado", "Turbo", "Bi-Turbo", "Compressor", "Rotativo", "Eléctrico"];
+const TRANSMISSIONS = ["Manual", "Automático", "CVT", "Semi-automático"];
+const DRIVE_TYPES = ["Dianteira (FWD)", "Traseira (RWD)", "Integral (AWD)", "4x4 (4WD)"];
 const BODY_TYPES = ["Sedan", "SUV", "Pickup", "Hatchback", "Comercial", "Caminhão", "Moto", "Outro"];
+const SITUATIONS = [
+  "Recém importado",
+  "Em uso no país há menos de 5 anos",
+  "Em uso no país há mais de 5 anos",
+];
+
+const SELECT_CLASS =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const CarForm = () => {
   const [formData, setFormData] = useState({
@@ -28,10 +41,14 @@ const CarForm = () => {
     year: "",
     color: "",
     fuelType: "",
+    engineType: "",
     transmission: "",
+    driveType: "",
     engineSize: "",
     bodyType: "",
     initialMileage: "",
+    importYear: "",
+    situation: "",
   });
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -114,10 +131,14 @@ const CarForm = () => {
           year: formData.year ? Number(formData.year) : undefined,
           color: formData.color || undefined,
           fuelType: formData.fuelType || undefined,
+          engineType: formData.engineType || undefined,
           transmission: formData.transmission || undefined,
+          driveType: formData.driveType || undefined,
           engineSize: formData.engineSize || undefined,
           bodyType: formData.bodyType || undefined,
           initialMileage: formData.initialMileage ? Number(formData.initialMileage) : undefined,
+          importYear: formData.importYear ? Number(formData.importYear) : undefined,
+          situation: formData.situation || undefined,
           photos: photoFiles,
         },
         token ?? undefined,
@@ -156,13 +177,16 @@ const CarForm = () => {
               <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0 text-amber-500" />
               <div>
                 <p className="font-semibold text-sm">Conta não verificada</p>
-                <p className="text-sm mt-0.5">Não é possível registar viaturas enquanto a sua oficina não for verificada pelo administrador.</p>
+                <p className="text-sm mt-0.5">
+                  Não é possível registar viaturas enquanto a sua oficina não for verificada pelo administrador.
+                </p>
               </div>
             </div>
           )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Identification */}
+
+            {/* ── Identificação ── */}
             <div className="bg-card border border-border rounded-lg p-6 shadow-card">
               <div className="flex items-center gap-2 mb-4">
                 <Hash className="h-5 w-5 text-accent" />
@@ -215,7 +239,7 @@ const CarForm = () => {
               </div>
             </div>
 
-            {/* Brand & Model */}
+            {/* ── Marca e Modelo ── */}
             <div className="bg-card border border-border rounded-lg p-6 shadow-card">
               <div className="flex items-center gap-2 mb-4">
                 <Car className="h-5 w-5 text-accent" />
@@ -224,13 +248,7 @@ const CarForm = () => {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="brand">Marca *</Label>
-                  <select
-                    id="brand"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={formData.brand}
-                    onChange={handleChange}
-                    required
-                  >
+                  <select id="brand" className={SELECT_CLASS} value={formData.brand} onChange={handleChange} required>
                     <option value="">-- Selecione a marca --</option>
                     {BRANDS.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
@@ -247,37 +265,29 @@ const CarForm = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="year">Ano de Fabrico</Label>
-                  <div className="relative mt-1">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="year"
-                      type="number"
-                      placeholder="2019"
-                      className="pl-10"
-                      min={1950}
-                      max={new Date().getFullYear() + 1}
-                      value={formData.year}
-                      onChange={handleChange}
-                    />
-                  </div>
-                </div>
-                <div>
                   <Label htmlFor="bodyType">Tipo de Carroçaria</Label>
-                  <select
-                    id="bodyType"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={formData.bodyType}
-                    onChange={handleChange}
-                  >
+                  <select id="bodyType" className={SELECT_CLASS} value={formData.bodyType} onChange={handleChange}>
                     <option value="">-- Selecione --</option>
                     {BODY_TYPES.map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
+                <div>
+                  <Label htmlFor="color">Cor</Label>
+                  <div className="relative mt-1">
+                    <Palette className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="color"
+                      placeholder="Branco, Prata, Preto..."
+                      className="pl-10"
+                      value={formData.color}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
 
-            {/* Technical details */}
+            {/* ── Dados Técnicos ── */}
             <div className="bg-card border border-border rounded-lg p-6 shadow-card">
               <div className="flex items-center gap-2 mb-4">
                 <Settings className="h-5 w-5 text-accent" />
@@ -300,39 +310,38 @@ const CarForm = () => {
                   </div>
                 </div>
                 <div>
+                  <Label htmlFor="engineType">Tipo de Motor</Label>
+                  <select id="engineType" className={SELECT_CLASS} value={formData.engineType} onChange={handleChange}>
+                    <option value="">-- Selecione --</option>
+                    {ENGINE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="engineSize">Cilindrada do Motor</Label>
+                  <div className="relative mt-1">
+                    <Gauge className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="engineSize"
+                      placeholder="2.0L, 2500cc, 1800cc..."
+                      className="pl-10"
+                      value={formData.engineSize}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div>
                   <Label htmlFor="transmission">Transmissão</Label>
-                  <select
-                    id="transmission"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                    value={formData.transmission}
-                    onChange={handleChange}
-                  >
+                  <select id="transmission" className={SELECT_CLASS} value={formData.transmission} onChange={handleChange}>
                     <option value="">-- Selecione --</option>
                     {TRANSMISSIONS.map(t => <option key={t} value={t}>{t}</option>)}
                   </select>
                 </div>
                 <div>
-                  <Label htmlFor="engineSize">Cilindrada</Label>
-                  <Input
-                    id="engineSize"
-                    placeholder="2.0L, 2500cc..."
-                    className="mt-1"
-                    value={formData.engineSize}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="color">Cor</Label>
-                  <div className="relative mt-1">
-                    <Palette className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="color"
-                      placeholder="Branco, Prata, Preto..."
-                      className="pl-10"
-                      value={formData.color}
-                      onChange={handleChange}
-                    />
-                  </div>
+                  <Label htmlFor="driveType">Tracção</Label>
+                  <select id="driveType" className={SELECT_CLASS} value={formData.driveType} onChange={handleChange}>
+                    <option value="">-- Selecione --</option>
+                    {DRIVE_TYPES.map(d => <option key={d} value={d}>{d}</option>)}
+                  </select>
                 </div>
                 <div>
                   <Label htmlFor="initialMileage">Quilometragem Inicial</Label>
@@ -345,14 +354,64 @@ const CarForm = () => {
                     value={formData.initialMileage}
                     onChange={handleChange}
                   />
+                  <p className="text-[10px] text-muted-foreground mt-1">Km da viatura no momento do registo</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Anos e Situação ── */}
+            <div className="bg-card border border-border rounded-lg p-6 shadow-card">
+              <div className="flex items-center gap-2 mb-4">
+                <Globe className="h-5 w-5 text-accent" />
+                <h2 className="font-display font-semibold text-foreground">Historial de Importação</h2>
+              </div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="year">Ano de Fabrico</Label>
+                  <div className="relative mt-1">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="year"
+                      type="number"
+                      placeholder="2019"
+                      className="pl-10"
+                      min={1950}
+                      max={new Date().getFullYear() + 1}
+                      value={formData.year}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="importYear">Ano de Importação para Moçambique</Label>
+                  <div className="relative mt-1">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="importYear"
+                      type="number"
+                      placeholder="2021"
+                      className="pl-10"
+                      min={1950}
+                      max={new Date().getFullYear() + 1}
+                      value={formData.importYear}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="situation">Situação da Viatura</Label>
+                  <select id="situation" className={SELECT_CLASS} value={formData.situation} onChange={handleChange}>
+                    <option value="">-- Selecione --</option>
+                    {SITUATIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    Km da viatura no momento do registo
+                    Indica se a viatura foi recentemente importada ou já está em uso no país há algum tempo.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Photos */}
+            {/* ── Fotos ── */}
             <div className="bg-card border border-border rounded-lg p-6 shadow-card">
               <div className="flex items-center gap-2 mb-4">
                 <Camera className="h-5 w-5 text-accent" />
