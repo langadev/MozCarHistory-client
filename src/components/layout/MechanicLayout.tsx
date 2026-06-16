@@ -1,4 +1,4 @@
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Wrench, Search, LogOut, Wrench as WrenchIcon, KeyRound,
@@ -19,10 +19,10 @@ const MechanicLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <aside className="flex w-64 flex-shrink-0 flex-col border-r bg-card">
-        <div className="flex items-center gap-2 border-b px-6 py-5">
+        <Link to="/" className="flex items-center gap-2 border-b px-6 py-5 hover:bg-muted/50 transition-colors">
           <WrenchIcon className="h-5 w-5 text-accent" />
           <span className="font-semibold text-sm">Moz Car History</span>
-        </div>
+        </Link>
 
         <nav className="flex-1 space-y-1 px-3 py-4">
           {navItems.map(({ to, label, icon: Icon, end }) => (

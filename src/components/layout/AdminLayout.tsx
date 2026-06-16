@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminStats } from "@/api/admin";
@@ -79,10 +79,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r bg-card">
-        <div className="flex items-center gap-2 border-b px-6 py-5">
+        <Link to="/" className="flex items-center gap-2 border-b px-6 py-5 hover:bg-muted/50 transition-colors">
           <Shield className="h-5 w-5 text-accent" />
           <span className="font-semibold text-sm">Painel Admin</span>
-        </div>
+        </Link>
         <NavContent />
       </aside>
 
@@ -97,17 +97,17 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0 flex flex-col">
-              <div className="flex items-center gap-2 border-b px-6 py-5">
+              <Link to="/" onClick={() => setMobileOpen(false)} className="flex items-center gap-2 border-b px-6 py-5 hover:bg-muted/50 transition-colors">
                 <Shield className="h-5 w-5 text-accent" />
                 <span className="font-semibold text-sm">Painel Admin</span>
-              </div>
+              </Link>
               <NavContent onNav={() => setMobileOpen(false)} />
             </SheetContent>
           </Sheet>
-          <div className="flex items-center gap-2">
+          <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             <Shield className="h-4 w-4 text-accent" />
             <span className="font-semibold text-sm">Painel Admin</span>
-          </div>
+          </Link>
           {pendingCount > 0 && (
             <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
               {pendingCount}
