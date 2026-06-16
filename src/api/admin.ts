@@ -192,3 +192,19 @@ export const getAdminWorkshopDetail = (
   id: number,
 ): Promise<any> =>
   apiFetch(`/admin/workshops/${id}`, authHeader(token));
+
+export interface FinanceStats {
+  totalRevenue: number;
+  totalRecordsWithCost: number;
+  avgCost: number;
+  thisMonthRevenue: number;
+  thisMonthCount: number;
+  lastMonthRevenue: number;
+  lastMonthCount: number;
+  monthlyRevenue: { month: string; revenue: number; count: number }[];
+  topWorkshops: { id: number; name: string; revenue: number; records: number }[];
+  revenueByServiceType: { serviceType: string; revenue: number; count: number }[];
+}
+
+export const getAdminFinanceStats = (token: string): Promise<FinanceStats> =>
+  apiFetch("/admin/finance", authHeader(token));
