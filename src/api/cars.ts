@@ -91,3 +91,10 @@ export async function getCarByPlate(plateNumber: string, token?: string): Promis
   });
   return cars.length > 0 ? cars[0] : null;
 }
+
+export async function getCarByVin(vin: string, token?: string): Promise<Car | null> {
+  const cars = await apiFetch<Car[]>(`/cars?vin=${encodeURIComponent(vin)}`, {
+    headers: withAuthToken(token),
+  });
+  return cars.length > 0 ? cars[0] : null;
+}

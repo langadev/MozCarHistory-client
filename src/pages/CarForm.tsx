@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import { createCar } from "@/api/cars";
+import { createCar, getCarByPlate, getCarByVin } from "@/api/cars";
 
 const BRANDS = [
   "Toyota", "Nissan", "Ford", "Isuzu", "Mercedes-Benz", "Volkswagen",
@@ -36,6 +36,10 @@ const CarForm = () => {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [plateError, setPlateError] = useState<string | null>(null);
+  const [vinError, setVinError] = useState<string | null>(null);
+  const [checkingPlate, setCheckingPlate] = useState(false);
+  const [checkingVin, setCheckingVin] = useState(false);
 
   const { token, user } = useAuth();
   const navigate = useNavigate();
@@ -43,6 +47,36 @@ const CarForm = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { id, value } = e.target;
     setFormData(prev => ({ ...prev, [id]: value }));
+    if (id === "plate") setPlateError(null);
+    if (id === "vin") setVinError(null);
+  };
+
+  const handlePlateBlur = async () => {
+    const plate = formData.plate.trim();
+    if (!plate) return;
+    setCheckingPlate(true);
+    try {
+      const existing = await getCarByPlate(plate, token ?? undefined);
+      if (existing) setPlateError("Esta matrícula já se encontra registada no sistema.");
+    } catch {
+      // ignore network errors on blur
+    } finally {
+      setCheckingPlate(false);
+    }
+  };
+
+  const handleVinBlur = async () => {
+    const vin = formData.vin.trim();
+    if (!vin) return;
+    setCheckingVin(true);
+    try {
+      const existing = await getCarByVin(vin, token ?? undefined);
+      if (existing) setVinError("Este VIN já se encontra registado no sistema.");
+    } catch {
+      // ignore network errors on blur
+    } finally {
+      setCheckingVin(false);
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,7 +131,7 @@ const CarForm = () => {
     }
   };
 
-  const isBlocked = user?.verified === false;
+  const isBlocked = user?.verified === false || !!plateError || !!vinError;
 
   return (
     <div className="min-h-screen bg-background">
@@ -137,24 +171,46 @@ const CarForm = () => {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="plate">Matrícula *</Label>
-                  <Input
-                    id="plate"
-                    placeholder="MAA-123-MP"
-                    className="mt-1 font-mono"
-                    value={formData.plate}
-                    onChange={handleChange}
-                    required
-                  />
+                  <div className="relative mt-1">
+                    <Input
+                      id="plate"
+                      placeholder="MAA-123-MP"
+                      className={`font-mono pr-8 ${plateError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      value={formData.plate}
+                      onChange={handleChange}
+                      onBlur={handlePlateBlur}
+                      required
+                    />
+                    {checkingPlate && (
+                      <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {plateError && (
+                    <p className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertTriangle className="h-3 w-3 shrink-0" /> {plateError}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <Label htmlFor="vin">Chassis (VIN)</Label>
-                  <Input
-                    id="vin"
-                    placeholder="1HGBH41JXMN109186"
-                    className="mt-1 font-mono"
-                    value={formData.vin}
-                    onChange={handleChange}
-                  />
+                  <div className="relative mt-1">
+                    <Input
+                      id="vin"
+                      placeholder="1HGBH41JXMN109186"
+                      className={`font-mono pr-8 ${vinError ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      value={formData.vin}
+                      onChange={handleChange}
+                      onBlur={handleVinBlur}
+                    />
+                    {checkingVin && (
+                      <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    )}
+                  </div>
+                  {vinError && (
+                    <p className="flex items-center gap-1 text-xs text-destructive mt-1">
+                      <AlertTriangle className="h-3 w-3 shrink-0" /> {vinError}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
