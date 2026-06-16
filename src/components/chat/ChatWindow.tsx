@@ -28,7 +28,7 @@ interface ChatWindowProps {
 
 export function ChatWindow({ partner, onBack }: ChatWindowProps) {
   const { token, user } = useAuth();
-  const { connected, sendMessage, onNewMessage, onMessagesRead, markRead: socketMarkRead } = useSocket();
+  const { connected, connectError, sendMessage, onNewMessage, onMessagesRead, markRead: socketMarkRead } = useSocket();
   const qc = useQueryClient();
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
@@ -147,8 +147,9 @@ export function ChatWindow({ partner, onBack }: ChatWindowProps) {
           <p className="text-xs text-muted-foreground truncate">{partner.email}</p>
         </div>
         {!connected && (
-          <span className="flex items-center gap-1 text-xs text-amber-500">
-            <WifiOff className="h-3.5 w-3.5" /> Desconectado
+          <span className="flex items-center gap-1 text-xs text-amber-500" title={connectError ?? undefined}>
+            <WifiOff className="h-3.5 w-3.5" />
+            {connectError ? `Erro: ${connectError}` : "A conectar..."}
           </span>
         )}
       </div>

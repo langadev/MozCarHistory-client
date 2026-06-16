@@ -11,6 +11,7 @@ const SOCKET_URL =
 interface SocketContextValue {
   socket: Socket | null;
   connected: boolean;
+  connectError: string | null;
   sendMessage: (receiverId: number, content: string) => Promise<Message | null>;
   markRead: (senderId: number) => void;
   onNewMessage: (cb: (msg: Message) => void) => () => void;
@@ -20,6 +21,7 @@ interface SocketContextValue {
 const SocketContext = createContext<SocketContextValue>({
   socket: null,
   connected: false,
+  connectError: null,
   sendMessage: async () => null,
   markRead: () => {},
   onNewMessage: () => () => {},
@@ -32,6 +34,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
   const socketRef = useRef<Socket | null>(null);
   const [connected, setConnected] = useState(false);
+  const [connectError, setConnectError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -43,13 +46,17 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
     const socket = io(`${SOCKET_URL}/messages`, {
       auth: { token },
-      transports: ["websocket"],
+      transports: ["websocket", "polling"],
       reconnectionAttempts: 5,
       reconnectionDelay: 2000,
     });
 
-    socket.on("connect", () => setConnected(true));
+    socket.on("connect", () => { setConnected(true); setConnectError(null); });
     socket.on("disconnect", () => setConnected(false));
+    socket.on("connect_error", (err) => {
+      console.error("[Socket] connect_error:", err.message, err);
+      setConnectError(err.message);
+    });
 
     socketRef.current = socket;
     return () => { socket.disconnect(); socketRef.current = null; setConnected(false); };
@@ -76,7 +83,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SocketContext.Provider value={{ socket: socketRef.current, connected, sendMessage, markRead, onNewMessage, onMessagesRead }}>
+    <SocketContext.Provider value={{ socket: socketRef.current, connected, connectError, sendMessage, markRead, onNewMessage, onMessagesRead }}>
       {children}
     </SocketContext.Provider>
   );
