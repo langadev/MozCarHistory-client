@@ -23,6 +23,8 @@ import AdminWorkshops from "./pages/admin/AdminWorkshops";
 import AdminVehicles from "./pages/admin/AdminVehicles";
 import AdminWorkshopDetail from "./pages/admin/AdminWorkshopDetail";
 import WorkshopMechanics from "./pages/WorkshopMechanics";
+import WorkshopVehicles from "./pages/WorkshopVehicles";
+import WorkshopRecords from "./pages/WorkshopRecords";
 import MechanicDashboard from "./pages/mecanico/MechanicDashboard";
 import MechanicServiceForm from "./pages/mecanico/MechanicServiceForm";
 import ChangePassword from "./pages/ChangePassword";
@@ -37,7 +39,7 @@ import AdminRoute from "@/components/auth/AdminRoute";
 const queryClient = new QueryClient();
 
 // Paths that always use WorkshopLayout (oficina-only)
-const WORKSHOP_OWNED = ["/dashboard", "/registar-viatura", "/registar-servico", "/perfil-oficina", "/mecanicos"];
+const WORKSHOP_OWNED = ["/dashboard", "/registar-viatura", "/registar-servico", "/perfil-oficina", "/mecanicos", "/minhas-viaturas", "/meus-registos"];
 // Paths that always use MechanicLayout
 const MECHANIC_OWNED = ["/mecanico/dashboard", "/mecanico/registar-servico"];
 // Public paths that oficina users should also see with the sidebar
@@ -128,6 +130,8 @@ const App = () => (
               <Route path="/registar-servico" element={<WorkshopRoute><MaintenanceForm /></WorkshopRoute>} />
               <Route path="/perfil-oficina" element={<WorkshopRoute><WorkshopProfile /></WorkshopRoute>} />
               <Route path="/mecanicos" element={<WorkshopRoute><WorkshopMechanics /></WorkshopRoute>} />
+              <Route path="/minhas-viaturas" element={<WorkshopRoute><WorkshopVehicles /></WorkshopRoute>} />
+              <Route path="/meus-registos" element={<WorkshopRoute><WorkshopRecords /></WorkshopRoute>} />
 
               {/* Mechanic routes */}
               <Route path="/mecanico/dashboard" element={<MechanicRoute><MechanicDashboard /></MechanicRoute>} />

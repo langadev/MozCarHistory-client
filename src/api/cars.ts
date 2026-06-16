@@ -94,6 +94,42 @@ export async function searchCars(q: string, page = 1, limit = 12): Promise<CarSe
   );
 }
 
+export interface MyCar extends Car {
+  _count: { records: number };
+}
+
+export async function getMyRegisteredCars(token: string): Promise<MyCar[]> {
+  return apiFetch<MyCar[]>("/cars/my", { headers: withAuthToken(token) });
+}
+
+export interface UpdateCarPayload {
+  brand?: string;
+  model?: string;
+  year?: number;
+  color?: string;
+  fuelType?: string;
+  engineType?: string;
+  driveType?: string;
+  transmission?: string;
+  engineSize?: string;
+  bodyType?: string;
+  initialMileage?: number;
+  importYear?: number;
+  situation?: string;
+}
+
+export async function updateCar(id: number, payload: UpdateCarPayload, token: string): Promise<Car> {
+  return apiFetch<Car>(`/cars/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...withAuthToken(token) },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteCar(id: number, token: string): Promise<void> {
+  await apiFetch(`/cars/${id}`, { method: "DELETE", headers: withAuthToken(token) });
+}
+
 export async function getAllCars(token?: string): Promise<Car[]> {
   return apiFetch<Car[]>("/cars", { headers: withAuthToken(token) });
 }

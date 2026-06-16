@@ -1,5 +1,60 @@
 import { apiFetch, withAuthToken } from "./client";
 
+export interface MyRecord {
+  id: number;
+  carId: number;
+  mileage: number;
+  serviceType: string | null;
+  description: string;
+  parts: string | null;
+  cost: number | null;
+  nextServiceMileage: number | null;
+  date: string;
+  createdAt: string;
+  workshopId: number;
+  photos: string[];
+  car: { plateNumber: string; brand: string; model: string; photos: string[] };
+  mechanic: { id: number; name: string; specialty: string | null } | null;
+}
+
+export async function getMyRecords(token: string): Promise<MyRecord[]> {
+  return apiFetch<MyRecord[]>("/maintenance/my", { headers: withAuthToken(token) });
+}
+
+export interface UpdateRecordPayload {
+  mileage?: number;
+  serviceType?: string;
+  description?: string;
+  parts?: string;
+  cost?: number;
+  nextServiceMileage?: number;
+  mechanicId?: number;
+}
+
+export async function updateRecord(id: number, payload: UpdateRecordPayload, token: string): Promise<MyRecord> {
+  return apiFetch<MyRecord>(`/maintenance/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...withAuthToken(token) },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deleteRecord(id: number, token: string): Promise<void> {
+  await apiFetch(`/maintenance/${id}`, { method: "DELETE", headers: withAuthToken(token) });
+}
+
+export function isRecordEditable(createdAt: string): boolean {
+  const created = new Date(createdAt);
+  const diffHours = (Date.now() - created.getTime()) / (1000 * 60 * 60);
+  return diffHours <= 48;
+}
+
+export function hoursUntilLocked(createdAt: string): number {
+  const created = new Date(createdAt);
+  const diffHours = (Date.now() - created.getTime()) / (1000 * 60 * 60);
+  return Math.max(0, 48 - diffHours);
+}
+
 export interface VehicleSummary {
   id: number;
   car: {

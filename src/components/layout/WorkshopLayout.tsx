@@ -2,7 +2,8 @@ import { useState } from "react";
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  LayoutDashboard, Car, Wrench, Search, Grid3X3, User, LogOut, Shield, UserCog, AlertTriangle, Menu,
+  LayoutDashboard, Car, Wrench, Search, Grid3X3, User, LogOut, Shield,
+  UserCog, AlertTriangle, Menu, List, ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -11,7 +12,9 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/registar-viatura", label: "Registar Viatura", icon: Car },
+  { to: "/minhas-viaturas", label: "As Minhas Viaturas", icon: List },
   { to: "/registar-servico", label: "Registar Serviço", icon: Wrench },
+  { to: "/meus-registos", label: "Os Meus Registos", icon: ClipboardList },
   { to: "/mecanicos", label: "Mecânicos", icon: UserCog },
   { to: "/veiculos", label: "Catálogo", icon: Grid3X3 },
   { to: "/consulta", label: "Consultar Histórico", icon: Search },
