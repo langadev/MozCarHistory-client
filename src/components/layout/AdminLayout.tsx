@@ -4,7 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminStats } from "@/api/admin";
 import { getUnreadCount } from "@/api/messages";
-import { LayoutDashboard, Users, Building2, Car, LogOut, Shield, Menu, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Car, LogOut, Shield, Menu, MessageSquare, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -35,6 +35,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { to: "/admin/oficinas", label: "Oficinas", icon: Building2, badge: 0 },
     { to: "/admin/viaturas", label: "Viaturas", icon: Car, badge: pendingCount },
     { to: "/admin/mensagens", label: "Mensagens", icon: MessageSquare, badge: unreadCount },
+    { to: "/admin/roles", label: "Roles", icon: ShieldCheck, badge: 0 },
   ];
 
   const NavContent = ({ onNav }: { onNav?: () => void }) => (

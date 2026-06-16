@@ -214,3 +214,39 @@ export interface FinanceStats {
 
 export const getAdminFinanceStats = (token: string): Promise<FinanceStats> =>
   apiFetch("/admin/finance", authHeader(token));
+
+// ── Roles ──────────────────────────────────────────────────────────────────
+export interface Role {
+  id: number;
+  name: string;
+  description: string | null;
+  _count?: { users: number };
+}
+
+export const getRoles = (token: string): Promise<Role[]> =>
+  apiFetch("/roles", authHeader(token));
+
+export const createRole = (
+  token: string,
+  name: string,
+  description?: string,
+): Promise<Role> =>
+  apiFetch("/roles", {
+    method: "POST",
+    body: JSON.stringify({ name, description }),
+    ...authHeader(token),
+  });
+
+export const updateRole = (
+  token: string,
+  id: number,
+  data: { name?: string; description?: string },
+): Promise<Role> =>
+  apiFetch(`/roles/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
+    ...authHeader(token),
+  });
+
+export const deleteRole = (token: string, id: number): Promise<void> =>
+  apiFetch(`/roles/${id}`, { method: "DELETE", ...authHeader(token) });

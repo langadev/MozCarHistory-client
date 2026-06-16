@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { getAdminUsers, updateUserRole, updateUserStatus, resetUserPassword, AdminUser } from "@/api/admin";
+import { getAdminUsers, updateUserRole, updateUserStatus, resetUserPassword, getRoles, AdminUser } from "@/api/admin";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -42,12 +42,21 @@ const AdminUsers = () => {
   const [roleFilter, setRoleFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
 
+  const [roleTarget, setRoleTarget] = useState<AdminUser | null>(null);
+  const [selectedRole, setSelectedRole] = useState("");
   const [resetTarget, setResetTarget] = useState<AdminUser | null>(null);
   const [resetPassword, setResetPassword] = useState(generatePassword());
   const [resetDone, setResetDone] = useState(false);
 
   const role = roleFilter === "all" ? undefined : roleFilter;
   const debouncedSearch = useDebounce(search, 350);
+
+  const { data: rolesData } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => getRoles(token!),
+    enabled: !!token,
+  });
+  const allRoles = rolesData ?? [];
 
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users", page, role, debouncedSearch],
@@ -164,52 +173,16 @@ const AdminUsers = () => {
                         {u.suspended ? "Suspenso" : "Activo"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right space-x-2">
+                    <TableCell className="text-right">
                       {u.id !== authUser?.id && (
-                        <>
-                          {u.role?.name !== "admin" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="sm">Promover a Admin</Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Promover a Admin?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {u.name ?? u.email} terá acesso total ao painel administrativo.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => roleMutation.mutate({ id: u.id, newRole: "admin" })}>
-                                    Confirmar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                          {u.role?.name === "admin" && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="sm">Despromover</Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Despromover Admin?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {u.name ?? u.email} perderá acesso ao painel administrativo.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => roleMutation.mutate({ id: u.id, newRole: "comprador" })}>
-                                    Confirmar
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-
+                        <div className="flex items-center justify-end gap-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setRoleTarget(u); setSelectedRole(u.role?.name ?? ""); }}
+                          >
+                            Role
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -218,7 +191,6 @@ const AdminUsers = () => {
                           >
                             <KeyRound className="h-4 w-4" />
                           </Button>
-
                           <Button
                             variant="ghost"
                             size="sm"
@@ -227,7 +199,7 @@ const AdminUsers = () => {
                           >
                             {u.suspended ? "Activar" : "Suspender"}
                           </Button>
-                        </>
+                        </div>
                       )}
                     </TableCell>
                   </TableRow>
@@ -258,6 +230,53 @@ const AdminUsers = () => {
           </>
         )}
       </div>
+
+      {/* Alterar Role Dialog */}
+      <Dialog open={!!roleTarget} onOpenChange={(open) => { if (!open) setRoleTarget(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Alterar Role</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Utilizador: <span className="font-medium text-foreground">{roleTarget?.name ?? roleTarget?.email}</span>
+            </p>
+            <div>
+              <Label>Nova Role</Label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Seleccionar role..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allRoles.map(r => (
+                    <SelectItem key={r.id} value={r.name}>
+                      {roleLabel[r.name] ?? r.name}
+                      {r.description && <span className="text-muted-foreground ml-2 text-xs">— {r.description}</span>}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRoleTarget(null)}>Cancelar</Button>
+            <Button
+              disabled={!selectedRole || selectedRole === roleTarget?.role?.name || roleMutation.isPending}
+              onClick={() => {
+                if (roleTarget && selectedRole) {
+                  roleMutation.mutate(
+                    { id: roleTarget.id, newRole: selectedRole },
+                    { onSuccess: () => setRoleTarget(null) },
+                  );
+                }
+              }}
+            >
+              {roleMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Guardar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset Senha Dialog */}
       <Dialog open={!!resetTarget} onOpenChange={(open) => { if (!open) { setResetTarget(null); setResetDone(false); } }}>
