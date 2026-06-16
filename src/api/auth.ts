@@ -24,6 +24,7 @@ export interface AuthResponse {
     name: string;
     role: "oficina" | "comprador" | "admin" | "mecanico";
     mustChangePassword: boolean;
+    verified: boolean;
   };
 }
 

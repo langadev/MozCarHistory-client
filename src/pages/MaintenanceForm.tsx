@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Car, Wrench, Camera, Save, Gauge, Plus, Loader2, User, DollarSign, AlertCircle } from "lucide-react";
+import { Car, Wrench, Camera, Save, Gauge, Plus, Loader2, User, DollarSign, AlertCircle, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,6 +157,16 @@ const MaintenanceForm = () => {
           <p className="text-muted-foreground mb-8">
             Preencha os dados da manutenção realizada. Os campos com * são obrigatórios.
           </p>
+
+          {user?.verified === false && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-amber-800">
+              <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0 text-amber-500" />
+              <div>
+                <p className="font-semibold text-sm">Conta não verificada</p>
+                <p className="text-sm mt-0.5">Não é possível registar serviços enquanto a sua oficina não for verificada pelo administrador.</p>
+              </div>
+            </div>
+          )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Vehicle selection */}
@@ -413,7 +423,7 @@ const MaintenanceForm = () => {
               type="submit"
               size="lg"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
-              disabled={isLoading || !selectedCar}
+              disabled={isLoading || !selectedCar || user?.verified === false}
             >
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
               Guardar Registo

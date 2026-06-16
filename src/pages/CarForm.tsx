@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Car, Save, Hash, Plus, Loader2, Camera, Fuel, Settings, Calendar, Palette } from "lucide-react";
+import { Car, Save, Hash, Plus, Loader2, Camera, Fuel, Settings, Calendar, Palette, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,7 @@ const CarForm = () => {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -97,6 +97,8 @@ const CarForm = () => {
     }
   };
 
+  const isBlocked = user?.verified === false;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
@@ -114,6 +116,16 @@ const CarForm = () => {
           <p className="text-muted-foreground mb-8">
             Preencha os dados da viatura. Os campos com * são obrigatórios.
           </p>
+
+          {isBlocked && (
+            <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 text-amber-800">
+              <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0 text-amber-500" />
+              <div>
+                <p className="font-semibold text-sm">Conta não verificada</p>
+                <p className="text-sm mt-0.5">Não é possível registar viaturas enquanto a sua oficina não for verificada pelo administrador.</p>
+              </div>
+            </div>
+          )}
 
           <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Identification */}
@@ -318,7 +330,7 @@ const CarForm = () => {
               type="submit"
               size="lg"
               className="w-full bg-accent text-accent-foreground hover:bg-accent/90 font-semibold"
-              disabled={isLoading}
+              disabled={isLoading || isBlocked}
             >
               {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
               Registar Viatura

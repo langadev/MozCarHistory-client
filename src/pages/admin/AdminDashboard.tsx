@@ -3,7 +3,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { getAdminStats } from "@/api/admin";
 import AdminLayout from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Building2, Car, FileText, Loader2 } from "lucide-react";
+import { Users, Building2, Car, FileText, Loader2, Clock } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -13,11 +13,12 @@ import { ptBR } from "date-fns/locale";
 
 const COLORS = ["hsl(var(--accent))", "hsl(var(--muted))"];
 
-const statCards = (stats: { totalUsers: number; totalWorkshops: number; totalVehicles: number; totalRecords: number }) => [
-  { label: "Utilizadores", value: stats.totalUsers, icon: Users },
-  { label: "Oficinas", value: stats.totalWorkshops, icon: Building2 },
-  { label: "Viaturas", value: stats.totalVehicles, icon: Car },
-  { label: "Registos", value: stats.totalRecords, icon: FileText },
+const statCards = (stats: { totalUsers: number; totalWorkshops: number; totalVehicles: number; totalRecords: number; pendingVehicles: number }) => [
+  { label: "Utilizadores", value: stats.totalUsers, icon: Users, highlight: false },
+  { label: "Oficinas", value: stats.totalWorkshops, icon: Building2, highlight: false },
+  { label: "Viaturas", value: stats.totalVehicles, icon: Car, highlight: false },
+  { label: "Registos", value: stats.totalRecords, icon: FileText, highlight: false },
+  { label: "Viaturas Pendentes", value: stats.pendingVehicles, icon: Clock, highlight: stats.pendingVehicles > 0 },
 ];
 
 const AdminDashboard = () => {
@@ -40,15 +41,16 @@ const AdminDashboard = () => {
           </div>
         ) : data ? (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-              {statCards(data).map(({ label, value, icon: Icon }) => (
-                <Card key={label}>
+            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+              {statCards(data).map(({ label, value, icon: Icon, highlight }) => (
+                <Card key={label} className={highlight ? "border-amber-300 bg-amber-50" : ""}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-                    <Icon className="h-4 w-4 text-muted-foreground" />
+                    <CardTitle className={`text-sm font-medium ${highlight ? "text-amber-700" : "text-muted-foreground"}`}>{label}</CardTitle>
+                    <Icon className={`h-4 w-4 ${highlight ? "text-amber-500" : "text-muted-foreground"}`} />
                   </CardHeader>
                   <CardContent>
-                    <p className="text-3xl font-bold">{value.toLocaleString("pt")}</p>
+                    <p className={`text-3xl font-bold ${highlight ? "text-amber-700" : ""}`}>{value.toLocaleString("pt")}</p>
+                    {highlight && <p className="text-xs text-amber-600 mt-1">Aguardam aprovação</p>}
                   </CardContent>
                 </Card>
               ))}

@@ -7,6 +7,7 @@ interface User {
   name: string;
   role: 'oficina' | 'comprador' | 'admin' | 'mecanico';
   mustChangePassword?: boolean;
+  verified?: boolean;
 }
 
 interface AuthContextType {

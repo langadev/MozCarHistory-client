@@ -13,6 +13,8 @@ export interface Car {
   engineSize?: string | null;
   bodyType?: string | null;
   initialMileage?: number | null;
+  approvalStatus?: string | null;
+  approvalNote?: string | null;
   ownerId?: number | null;
   photos?: string[];
   records?: { mileage: number }[];

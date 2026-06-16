@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  LayoutDashboard, Car, Wrench, Search, Grid3X3, User, LogOut, Shield, UserCog,
+  LayoutDashboard, Car, Wrench, Search, Grid3X3, User, LogOut, Shield, UserCog, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -65,8 +65,17 @@ const WorkshopLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        {children}
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        {user?.verified === false && (
+          <div className="flex items-start gap-3 bg-amber-50 border-b border-amber-200 px-5 py-3 text-amber-800 shrink-0">
+            <AlertTriangle className="h-5 w-5 mt-0.5 shrink-0 text-amber-500" />
+            <div className="text-sm">
+              <span className="font-semibold">Conta não verificada.</span>{" "}
+              Não é possível registar viaturas nem serviços enquanto a sua oficina não for verificada pelo administrador.
+            </div>
+          </div>
+        )}
+        <div className="flex-1">{children}</div>
       </main>
     </div>
   );

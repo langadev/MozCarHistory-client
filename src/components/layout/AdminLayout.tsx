@@ -1,18 +1,30 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { getAdminStats } from "@/api/admin";
 import { LayoutDashboard, Users, Building2, Car, LogOut, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const navItems = [
-  { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true },
-  { to: "/admin/utilizadores", label: "Utilizadores", icon: Users },
-  { to: "/admin/oficinas", label: "Oficinas", icon: Building2 },
-  { to: "/admin/viaturas", label: "Viaturas", icon: Car },
-];
-
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
+  const navigate = useNavigate();
+
+  const { data: stats } = useQuery({
+    queryKey: ["admin-stats"],
+    queryFn: () => getAdminStats(token!),
+    enabled: !!token,
+    staleTime: 60_000,
+  });
+
+  const pendingCount = stats?.pendingVehicles ?? 0;
+
+  const navItems = [
+    { to: "/admin", label: "Dashboard", icon: LayoutDashboard, end: true, badge: 0 },
+    { to: "/admin/utilizadores", label: "Utilizadores", icon: Users, badge: 0 },
+    { to: "/admin/oficinas", label: "Oficinas", icon: Building2, badge: 0 },
+    { to: "/admin/viaturas", label: "Viaturas", icon: Car, badge: pendingCount },
+  ];
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -23,7 +35,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
 
         <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map(({ to, label, icon: Icon, end }) => (
+          {navItems.map(({ to, label, icon: Icon, end, badge }) => (
             <NavLink
               key={to}
               to={to}
@@ -38,7 +50,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
               }
             >
               <Icon className="h-4 w-4" />
-              {label}
+              <span className="flex-1">{label}</span>
+              {badge > 0 && (
+                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
+                  {badge}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

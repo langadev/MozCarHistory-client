@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Car, Wrench, Star, ShieldCheck, Plus, TrendingUp, Calendar } from "lucide-react";
+import { Car, Wrench, Star, ShieldCheck, Plus, TrendingUp, Calendar, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Link } from "react-router-dom";
@@ -121,6 +121,36 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+
+        {/* Pending vehicles warning */}
+        {(() => {
+          const pending = cars.filter(c => c.approvalStatus === "pendente");
+          const rejected = cars.filter(c => c.approvalStatus === "rejeitada");
+          if (pending.length === 0 && rejected.length === 0) return null;
+          return (
+            <div className="mb-6 space-y-2">
+              {pending.length > 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-800">
+                  <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-500" />
+                  <p className="text-sm">
+                    <span className="font-semibold">{pending.length} viatura{pending.length > 1 ? "s" : ""} aguarda{pending.length === 1 ? "" : "m"} aprovação</span> pelo administrador.
+                    {" "}As matrículas são: {pending.map(c => c.plateNumber).join(", ")}.
+                  </p>
+                </div>
+              )}
+              {rejected.length > 0 && (
+                <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-red-800">
+                  <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-red-500" />
+                  <p className="text-sm">
+                    <span className="font-semibold">{rejected.length} viatura{rejected.length > 1 ? "s" : ""} foi{rejected.length > 1 ? "ram" : ""} rejeitada{rejected.length > 1 ? "s" : ""}</span>.
+                    {" "}Contacte o administrador para mais informações.
+                    {" "}Matrículas: {rejected.map(c => c.plateNumber).join(", ")}.
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
 
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
