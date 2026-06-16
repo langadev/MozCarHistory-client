@@ -126,8 +126,9 @@ const Dashboard = () => {
 
         {/* Pending vehicles warning */}
         {(() => {
-          const pending = cars.filter(c => c.approvalStatus === "pendente");
-          const rejected = cars.filter(c => c.approvalStatus === "rejeitada");
+          const myCars = cars.filter(c => c.registeredById === user?.id);
+          const pending = myCars.filter(c => c.approvalStatus === "pendente");
+          const rejected = myCars.filter(c => c.approvalStatus === "rejeitada");
           if (pending.length === 0 && rejected.length === 0) return null;
           return (
             <div className="mb-6 space-y-2">
@@ -239,8 +240,8 @@ const Dashboard = () => {
               Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="aspect-[4/3] bg-muted animate-pulse rounded-lg" />
               ))
-            ) : cars.length > 0 ? (
-              cars.slice(0, 6).map((car, i) => (
+            ) : cars.filter(c => c.registeredById === user?.id).length > 0 ? (
+              cars.filter(c => c.registeredById === user?.id).slice(0, 6).map((car, i) => (
                 <motion.div
                   key={car.id}
                   initial={{ opacity: 0, scale: 0.9 }}

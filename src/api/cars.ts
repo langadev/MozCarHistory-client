@@ -16,6 +16,7 @@ export interface Car {
   approvalStatus?: string | null;
   approvalNote?: string | null;
   ownerId?: number | null;
+  registeredById?: number | null;
   photos?: string[];
   records?: { mileage: number }[];
 }
