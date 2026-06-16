@@ -186,3 +186,9 @@ export const resetUserPassword = (
     body: JSON.stringify({ password }),
     ...authHeader(token),
   });
+
+export const getAdminWorkshopDetail = (
+  token: string,
+  id: number,
+): Promise<any> =>
+  apiFetch(`/admin/workshops/${id}`, authHeader(token));

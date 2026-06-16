@@ -21,6 +21,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminWorkshops from "./pages/admin/AdminWorkshops";
 import AdminVehicles from "./pages/admin/AdminVehicles";
+import AdminWorkshopDetail from "./pages/admin/AdminWorkshopDetail";
 import WorkshopMechanics from "./pages/WorkshopMechanics";
 import MechanicDashboard from "./pages/mecanico/MechanicDashboard";
 import MechanicServiceForm from "./pages/mecanico/MechanicServiceForm";
@@ -119,6 +120,7 @@ const App = () => (
               <Route path="/admin/utilizadores" element={<AdminRoute><AdminUsers /></AdminRoute>} />
               <Route path="/admin/oficinas" element={<AdminRoute><AdminWorkshops /></AdminRoute>} />
               <Route path="/admin/viaturas" element={<AdminRoute><AdminVehicles /></AdminRoute>} />
+              <Route path="/admin/oficinas/:id" element={<AdminRoute><AdminWorkshopDetail /></AdminRoute>} />
 
               {/* Workshop routes — sidebar layout */}
               <Route path="/dashboard" element={<WorkshopRoute><Dashboard /></WorkshopRoute>} />

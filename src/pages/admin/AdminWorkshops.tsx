@@ -14,7 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, Search, ShieldCheck, ExternalLink, Plus, Copy, RefreshCw } from "lucide-react";
+import { Loader2, Search, ShieldCheck, ExternalLink, Plus, Copy, RefreshCw, Eye } from "lucide-react";
+import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
 function generatePassword(): string {
@@ -157,7 +158,12 @@ const AdminWorkshops = () => {
                 {filteredWorkshops.map((w) => (
                   <TableRow key={w.id}>
                     <TableCell className="font-medium">
-                      <div>{w.name ?? "—"}</div>
+                      <Link
+                        to={`/admin/oficinas/${w.id}`}
+                        className="hover:text-accent transition-colors"
+                      >
+                        {w.name ?? "—"}
+                      </Link>
                       <div className="text-xs text-muted-foreground sm:hidden">{w.email}</div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{w.email}</TableCell>
@@ -216,9 +222,11 @@ const AdminWorkshops = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => window.open(`/perfil-oficina?id=${w.id}`, "_blank")}
+                        asChild
                       >
-                        <ExternalLink className="h-4 w-4" />
+                        <Link to={`/admin/oficinas/${w.id}`}>
+                          <Eye className="h-4 w-4" />
+                        </Link>
                       </Button>
                     </TableCell>
                   </TableRow>
