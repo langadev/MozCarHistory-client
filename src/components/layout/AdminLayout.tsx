@@ -1,14 +1,16 @@
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { NavLink } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { getAdminStats } from "@/api/admin";
-import { LayoutDashboard, Users, Building2, Car, LogOut, Shield } from "lucide-react";
+import { LayoutDashboard, Users, Building2, Car, LogOut, Shield, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   const { user, logout, token } = useAuth();
-  const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const { data: stats } = useQuery({
     queryKey: ["admin-stats"],
@@ -26,60 +28,97 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     { to: "/admin/viaturas", label: "Viaturas", icon: Car, badge: pendingCount },
   ];
 
+  const NavContent = ({ onNav }: { onNav?: () => void }) => (
+    <>
+      <nav className="flex-1 space-y-1 px-3 py-4">
+        {navItems.map(({ to, label, icon: Icon, end, badge }) => (
+          <NavLink
+            key={to}
+            to={to}
+            end={end}
+            onClick={onNav}
+            className={({ isActive }) =>
+              cn(
+                "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
+                isActive
+                  ? "bg-accent/10 text-accent font-medium"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )
+            }
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1">{label}</span>
+            {badge > 0 && (
+              <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
+                {badge}
+              </span>
+            )}
+          </NavLink>
+        ))}
+      </nav>
+
+      <div className="border-t px-3 py-4">
+        <div className="mb-3 px-3">
+          <p className="text-xs font-medium text-foreground truncate">{user?.name ?? user?.email}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
+          onClick={logout}
+        >
+          <LogOut className="h-4 w-4" />
+          Sair
+        </Button>
+      </div>
+    </>
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      <aside className="flex w-64 flex-col border-r bg-card">
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex w-64 shrink-0 flex-col border-r bg-card">
         <div className="flex items-center gap-2 border-b px-6 py-5">
           <Shield className="h-5 w-5 text-accent" />
           <span className="font-semibold text-sm">Painel Admin</span>
         </div>
-
-        <nav className="flex-1 space-y-1 px-3 py-4">
-          {navItems.map(({ to, label, icon: Icon, end, badge }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={end}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                  isActive
-                    ? "bg-accent/10 text-accent font-medium"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )
-              }
-            >
-              <Icon className="h-4 w-4" />
-              <span className="flex-1">{label}</span>
-              {badge > 0 && (
-                <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
-                  {badge}
-                </span>
-              )}
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className="border-t px-3 py-4">
-          <div className="mb-3 px-3">
-            <p className="text-xs font-medium text-foreground truncate">{user?.name ?? user?.email}</p>
-            <p className="text-xs text-muted-foreground">{user?.email}</p>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full justify-start gap-3 text-muted-foreground hover:text-destructive"
-            onClick={logout}
-          >
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
-        </div>
+        <NavContent />
       </aside>
 
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+      {/* Mobile layout */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        {/* Mobile top bar */}
+        <header className="flex lg:hidden items-center gap-3 border-b bg-card px-4 py-3 shrink-0">
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <Menu className="h-5 w-5" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-0 flex flex-col">
+              <div className="flex items-center gap-2 border-b px-6 py-5">
+                <Shield className="h-5 w-5 text-accent" />
+                <span className="font-semibold text-sm">Painel Admin</span>
+              </div>
+              <NavContent onNav={() => setMobileOpen(false)} />
+            </SheetContent>
+          </Sheet>
+          <div className="flex items-center gap-2">
+            <Shield className="h-4 w-4 text-accent" />
+            <span className="font-semibold text-sm">Painel Admin</span>
+          </div>
+          {pendingCount > 0 && (
+            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
+              {pendingCount}
+            </span>
+          )}
+        </header>
+
+        <main className="flex-1 overflow-y-auto">
+          {children}
+        </main>
+      </div>
     </div>
   );
 };

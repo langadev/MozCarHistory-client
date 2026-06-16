@@ -15,6 +15,7 @@ import { Loader2, Search, KeyRound, RefreshCw, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useDebounce } from "@/hooks/use-debounce";
 
 function generatePassword(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789";
@@ -46,10 +47,11 @@ const AdminUsers = () => {
   const [resetDone, setResetDone] = useState(false);
 
   const role = roleFilter === "all" ? undefined : roleFilter;
+  const debouncedSearch = useDebounce(search, 350);
 
   const { data, isLoading } = useQuery({
-    queryKey: ["admin-users", page, role],
-    queryFn: () => getAdminUsers(token!, page, role),
+    queryKey: ["admin-users", page, role, debouncedSearch],
+    queryFn: () => getAdminUsers(token!, page, role, debouncedSearch || undefined),
     enabled: !!token,
   });
 
@@ -80,12 +82,7 @@ const AdminUsers = () => {
     onError: (e: any) => toast.error(e.message ?? "Erro ao resetar senha"),
   });
 
-  const filteredUsers = data?.users.filter((u) =>
-    !search ||
-    u.name?.toLowerCase().includes(search.toLowerCase()) ||
-    u.email.toLowerCase().includes(search.toLowerCase()),
-  ) ?? [];
-
+  const users = data?.users ?? [];
   const totalPages = data ? Math.ceil(data.total / data.pageSize) : 1;
 
   const openResetDialog = (u: AdminUser) => {
@@ -101,17 +98,17 @@ const AdminUsers = () => {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-semibold">Utilizadores</h1>
+      <div className="p-4 md:p-6 space-y-4">
+        <h1 className="text-xl md:text-2xl font-semibold">Utilizadores</h1>
 
-        <div className="flex gap-3">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Pesquisar por nome ou email..."
               className="pl-9"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             />
           </div>
           <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>
@@ -134,31 +131,35 @@ const AdminUsers = () => {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead className="hidden sm:table-cell">Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead>Registado em</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead className="hidden md:table-cell">Registado em</TableHead>
+                  <TableHead className="hidden sm:table-cell">Estado</TableHead>
                   <TableHead className="text-right">Acções</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredUsers.map((u) => (
+                {users.map((u) => (
                   <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.name ?? "—"}</TableCell>
-                    <TableCell>{u.email}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>{u.name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground sm:hidden">{u.email}</div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{u.email}</TableCell>
                     <TableCell>
                       <Badge variant={roleBadgeVariant[u.role?.name ?? "comprador"]}>
                         {roleLabel[u.role?.name ?? "comprador"] ?? u.role?.name}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
+                    <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                       {format(new Date(u.createdAt), "dd MMM yyyy", { locale: ptBR })}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant={u.suspended ? "destructive" : "outline"}>
                         {u.suspended ? "Suspenso" : "Activo"}
                       </Badge>
@@ -231,7 +232,7 @@ const AdminUsers = () => {
                     </TableCell>
                   </TableRow>
                 ))}
-                {filteredUsers.length === 0 && (
+                {users.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                       Nenhum utilizador encontrado.
@@ -240,6 +241,7 @@ const AdminUsers = () => {
                 )}
               </TableBody>
             </Table>
+            </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Total: {data?.total ?? 0} utilizadores</span>

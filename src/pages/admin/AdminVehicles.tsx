@@ -76,8 +76,8 @@ const AdminVehicles = () => {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-4">
-        <h1 className="text-2xl font-semibold">Viaturas</h1>
+      <div className="p-4 md:p-6 space-y-4">
+        <h1 className="text-xl md:text-2xl font-semibold">Viaturas</h1>
 
         <Tabs value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
           <TabsList>
@@ -88,7 +88,7 @@ const AdminVehicles = () => {
           </TabsList>
         </Tabs>
 
-        <div className="relative max-w-sm">
+        <div className="relative w-full sm:max-w-sm">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Pesquisar matrícula, marca ou modelo..."
@@ -104,14 +104,15 @@ const AdminVehicles = () => {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Matrícula</TableHead>
-                  <TableHead>VIN</TableHead>
+                  <TableHead className="hidden md:table-cell">VIN</TableHead>
                   <TableHead>Marca / Modelo</TableHead>
-                  <TableHead>Oficina</TableHead>
-                  <TableHead>Registos</TableHead>
+                  <TableHead className="hidden sm:table-cell">Oficina</TableHead>
+                  <TableHead className="hidden sm:table-cell">Registos</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead className="text-right">Acções</TableHead>
                 </TableRow>
@@ -119,11 +120,14 @@ const AdminVehicles = () => {
               <TableBody>
                 {data?.vehicles.map((v) => (
                   <TableRow key={v.id}>
-                    <TableCell className="font-medium font-mono">{v.plateNumber}</TableCell>
-                    <TableCell className="text-muted-foreground font-mono text-xs">{v.vin ?? "—"}</TableCell>
+                    <TableCell className="font-medium font-mono">
+                      <div>{v.plateNumber}</div>
+                      <div className="text-xs text-muted-foreground sm:hidden">{v.owner?.name ?? "—"}</div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">{v.vin ?? "—"}</TableCell>
                     <TableCell>{v.brand} {v.model}{v.year ? ` (${v.year})` : ""}</TableCell>
-                    <TableCell>{v.owner?.name ?? "—"}</TableCell>
-                    <TableCell>{v._count.records}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{v.owner?.name ?? "—"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{v._count.records}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <Badge className={`text-xs border ${STATUS_BADGE[v.approvalStatus] ?? ""}`}>
@@ -229,6 +233,7 @@ const AdminVehicles = () => {
                 )}
               </TableBody>
             </Table>
+            </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Total: {data?.total ?? 0} viaturas</span>

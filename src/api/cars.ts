@@ -68,8 +68,17 @@ export interface CarSearchResult extends Car {
   _count: { records: number };
 }
 
-export async function searchCars(q: string): Promise<CarSearchResult[]> {
-  return apiFetch<CarSearchResult[]>(`/cars/search?q=${encodeURIComponent(q)}`);
+export interface CarSearchResponse {
+  cars: CarSearchResult[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export async function searchCars(q: string, page = 1, limit = 12): Promise<CarSearchResponse> {
+  return apiFetch<CarSearchResponse>(
+    `/cars/search?q=${encodeURIComponent(q)}&page=${page}&limit=${limit}`,
+  );
 }
 
 export async function getAllCars(token?: string): Promise<Car[]> {

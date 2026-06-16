@@ -32,8 +32,8 @@ const AdminDashboard = () => {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+        <h1 className="text-xl md:text-2xl font-semibold">Dashboard</h1>
 
         {isLoading ? (
           <div className="flex h-40 items-center justify-center">
@@ -41,7 +41,7 @@ const AdminDashboard = () => {
           </div>
         ) : data ? (
           <>
-            <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+            <div className="grid grid-cols-2 gap-3 sm:gap-4 sm:grid-cols-3 lg:grid-cols-5">
               {statCards(data).map(({ label, value, icon: Icon, highlight }) => (
                 <Card key={label} className={highlight ? "border-amber-300 bg-amber-50" : ""}>
                   <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -56,7 +56,7 @@ const AdminDashboard = () => {
               ))}
             </div>
 
-            <div className="grid gap-4 lg:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm font-medium">Actividade Recente (registos)</CardTitle>

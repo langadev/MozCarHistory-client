@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Car, ShieldCheck, AlertTriangle, FileText, Gauge,
-  Calendar, Plus, Loader2, Fuel, Settings, Hash,
+  Calendar, Plus, Loader2, Fuel, Settings, Hash, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,14 +29,21 @@ function serviceTypeBadge(type: string | null) {
   );
 }
 
+const PAGE_SIZE = 12;
+
 const BuyerSearch = () => {
   const [query, setQuery] = useState("");
   const [searched, setSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<CarSearchResult[]>([]);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
 
-  const handleSearch = async (e?: React.FormEvent) => {
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  const handleSearch = async (e?: React.FormEvent, targetPage = 1) => {
     e?.preventDefault();
     const q = query.trim();
     if (q.length < 2) {
@@ -44,12 +51,14 @@ const BuyerSearch = () => {
       return;
     }
     setIsLoading(true);
-    setSearched(false);
+    if (targetPage === 1) setSearched(false);
     try {
-      const data = await searchCars(q);
-      setResults(data);
+      const data = await searchCars(q, targetPage, PAGE_SIZE);
+      setResults(data.cars);
+      setTotal(data.total);
+      setPage(data.page);
       setSearched(true);
-      if (data.length === 0) toast.info("Nenhuma viatura encontrada.");
+      if (data.total === 0) toast.info("Nenhuma viatura encontrada.");
     } catch (error: any) {
       toast.error(error?.message || "Erro ao pesquisar");
     } finally {
@@ -57,10 +66,17 @@ const BuyerSearch = () => {
     }
   };
 
+  const goToPage = (p: number) => {
+    handleSearch(undefined, p);
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const clearSearch = () => {
     setQuery("");
     setSearched(false);
     setResults([]);
+    setTotal(0);
+    setPage(1);
     inputRef.current?.focus();
   };
 
@@ -126,7 +142,7 @@ const BuyerSearch = () => {
       </section>
 
       {/* Results */}
-      <div className="container mx-auto px-4 py-10 max-w-5xl">
+      <div ref={resultsRef} className="container mx-auto px-4 py-10 max-w-5xl">
         <AnimatePresence mode="wait">
           {isLoading && (
             <motion.div
@@ -163,10 +179,15 @@ const BuyerSearch = () => {
 
           {!isLoading && searched && results.length > 0 && (
             <motion.div key="results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center justify-between mb-5 flex-wrap gap-2">
                 <p className="text-sm text-muted-foreground">
-                  <span className="font-bold text-foreground">{results.length}</span> viatura{results.length !== 1 ? "s" : ""} encontrada{results.length !== 1 ? "s" : ""}
+                  <span className="font-bold text-foreground">{total}</span> viatura{total !== 1 ? "s" : ""} encontrada{total !== 1 ? "s" : ""}
                   {" "}para <span className="font-mono font-semibold">"{query}"</span>
+                  {totalPages > 1 && (
+                    <span className="ml-2 text-xs">
+                      — página <span className="font-semibold text-foreground">{page}</span> de <span className="font-semibold text-foreground">{totalPages}</span>
+                    </span>
+                  )}
                 </p>
                 <button
                   type="button"
@@ -177,7 +198,7 @@ const BuyerSearch = () => {
                 </button>
               </div>
 
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" key={page}>
                 {results.map((car, i) => {
                   const lastRecord = car.records?.[0];
                   const recordCount = car._count?.records ?? 0;
@@ -298,6 +319,60 @@ const BuyerSearch = () => {
                   );
                 })}
               </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-3 mt-10">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page <= 1 || isLoading}
+                    onClick={() => goToPage(page - 1)}
+                    className="gap-1"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Anterior
+                  </Button>
+
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                      .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+                        if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("…");
+                        acc.push(p);
+                        return acc;
+                      }, [])
+                      .map((p, i) =>
+                        p === "…" ? (
+                          <span key={`ellipsis-${i}`} className="px-1 text-muted-foreground text-sm">…</span>
+                        ) : (
+                          <button
+                            key={p}
+                            onClick={() => goToPage(p as number)}
+                            className={`h-8 w-8 rounded-md text-sm font-medium transition-colors ${
+                              p === page
+                                ? "bg-accent text-accent-foreground"
+                                : "hover:bg-muted text-muted-foreground"
+                            }`}
+                          >
+                            {p}
+                          </button>
+                        )
+                      )}
+                  </div>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={page >= totalPages || isLoading}
+                    onClick={() => goToPage(page + 1)}
+                    className="gap-1"
+                  >
+                    Próximo
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

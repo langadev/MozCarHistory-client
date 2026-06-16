@@ -103,17 +103,17 @@ const AdminWorkshops = () => {
 
   return (
     <AdminLayout>
-      <div className="p-6 space-y-4">
+      <div className="p-4 md:p-6 space-y-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Oficinas</h1>
+          <h1 className="text-xl md:text-2xl font-semibold">Oficinas</h1>
           <Button onClick={handleOpenDialog} className="gap-2">
             <Plus className="h-4 w-4" />
             Nova Oficina
           </Button>
         </div>
 
-        <div className="flex gap-3">
-          <div className="relative flex-1 max-w-sm">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1 sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Pesquisar por nome..."
@@ -140,23 +140,27 @@ const AdminWorkshops = () => {
           </div>
         ) : (
           <>
+            <div className="overflow-x-auto rounded-md border">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead className="hidden sm:table-cell">Email</TableHead>
                   <TableHead>Verificada</TableHead>
-                  <TableHead>Viaturas</TableHead>
-                  <TableHead>Serviços</TableHead>
-                  <TableHead>Estado</TableHead>
+                  <TableHead className="hidden md:table-cell">Viaturas</TableHead>
+                  <TableHead className="hidden md:table-cell">Serviços</TableHead>
+                  <TableHead className="hidden sm:table-cell">Estado</TableHead>
                   <TableHead className="text-right">Acções</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredWorkshops.map((w) => (
                   <TableRow key={w.id}>
-                    <TableCell className="font-medium">{w.name ?? "—"}</TableCell>
-                    <TableCell>{w.email}</TableCell>
+                    <TableCell className="font-medium">
+                      <div>{w.name ?? "—"}</div>
+                      <div className="text-xs text-muted-foreground sm:hidden">{w.email}</div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{w.email}</TableCell>
                     <TableCell>
                       {w.verified ? (
                         <Badge className="gap-1 bg-green-100 text-green-700 border-green-200">
@@ -166,9 +170,9 @@ const AdminWorkshops = () => {
                         <Badge variant="outline">Pendente</Badge>
                       )}
                     </TableCell>
-                    <TableCell>{w._count.cars}</TableCell>
-                    <TableCell>{w._count.records}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden md:table-cell">{w._count.cars}</TableCell>
+                    <TableCell className="hidden md:table-cell">{w._count.records}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Badge variant={w.suspended ? "destructive" : "outline"}>
                         {w.suspended ? "Suspensa" : "Activa"}
                       </Badge>
@@ -228,6 +232,7 @@ const AdminWorkshops = () => {
                 )}
               </TableBody>
             </Table>
+            </div>
 
             <div className="flex items-center justify-between text-sm text-muted-foreground">
               <span>Total: {data?.total ?? 0} oficinas</span>

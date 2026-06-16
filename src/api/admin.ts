@@ -64,9 +64,10 @@ export const getAdminUsers = (
   token: string,
   page: number,
   role?: string,
+  search?: string,
 ): Promise<{ users: AdminUser[]; total: number; page: number; pageSize: number }> =>
   apiFetch(
-    `/admin/users?page=${page}${role ? `&role=${role}` : ""}`,
+    `/admin/users?page=${page}${role ? `&role=${role}` : ""}${search ? `&search=${encodeURIComponent(search)}` : ""}`,
     authHeader(token),
   );
 
