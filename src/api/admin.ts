@@ -30,7 +30,7 @@ export interface AdminWorkshop {
   verified: boolean;
   suspended: boolean;
   createdAt: string;
-  _count: { cars: number; records: number };
+  _count: { registeredCars: number; records: number };
 }
 
 export interface AdminVehicle {
@@ -42,7 +42,7 @@ export interface AdminVehicle {
   year: number | null;
   approvalStatus: string;
   approvalNote: string | null;
-  owner: { name: string | null } | null;
+  registeredBy: { name: string | null } | null;
   _count: { records: number };
 }
 

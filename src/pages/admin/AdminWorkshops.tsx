@@ -170,7 +170,7 @@ const AdminWorkshops = () => {
                         <Badge variant="outline">Pendente</Badge>
                       )}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell">{w._count.cars}</TableCell>
+                    <TableCell className="hidden md:table-cell">{w._count.registeredCars}</TableCell>
                     <TableCell className="hidden md:table-cell">{w._count.records}</TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge variant={w.suspended ? "destructive" : "outline"}>

@@ -126,7 +126,7 @@ const AdminVehicles = () => {
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground font-mono text-xs">{v.vin ?? "—"}</TableCell>
                     <TableCell>{v.brand} {v.model}{v.year ? ` (${v.year})` : ""}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{v.owner?.name ?? "—"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{v.registeredBy?.name ?? "—"}</TableCell>
                     <TableCell className="hidden sm:table-cell">{v._count.records}</TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1">
