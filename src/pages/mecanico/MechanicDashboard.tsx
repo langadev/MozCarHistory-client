@@ -29,12 +29,12 @@ const MechanicDashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-5xl px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <div>
-              <h1 className="font-display text-2xl font-bold text-foreground">Dashboard</h1>
+              <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">Dashboard</h1>
               <p className="text-sm text-muted-foreground">Viaturas e serviços da oficina</p>
             </div>
-            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90">
+            <Button asChild className="bg-accent text-accent-foreground hover:bg-accent/90 shrink-0">
               <Link to="/mecanico/registar-servico">
                 <Plus className="mr-2 h-4 w-4" />
                 Registar Serviço

@@ -95,27 +95,29 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8">
+        <div className="flex flex-col gap-4 mb-8 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-foreground">Dashboard da Oficina</h1>
-            <p className="text-muted-foreground mt-1">{user?.name || "Auto Mecânica Maputo, Lda."}</p>
+            <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">Dashboard da Oficina</h1>
+            <p className="text-muted-foreground mt-1 text-sm">{user?.name || "Auto Mecânica Maputo, Lda."}</p>
           </div>
-          <div className="flex items-center gap-3 mt-4 md:mt-0">
-            <div className="inline-flex items-center gap-2 bg-accent/10 text-accent px-3 py-1.5 rounded-full text-sm font-medium">
-              <ShieldCheck className="h-4 w-4" />
+          <div className="flex flex-col gap-2 sm:items-end">
+            <div className="inline-flex items-center gap-2 bg-accent/10 text-accent px-3 py-1.5 rounded-full text-xs font-medium self-start sm:self-auto">
+              <ShieldCheck className="h-3.5 w-3.5" />
               Oficina Verificada
             </div>
-            <div className="flex flex-col sm:flex-row gap-2">
-              <Link to="/registar-viatura">
-                <Button variant="outline" className="w-full sm:w-auto border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+            <div className="flex gap-2">
+              <Link to="/registar-viatura" className="flex-1 sm:flex-none">
+                <Button variant="outline" size="sm" className="w-full border-accent text-accent hover:bg-accent hover:text-accent-foreground">
                   <Car className="mr-2 h-4 w-4" />
-                  Registar Nova Viatura
+                  <span className="hidden sm:inline">Registar Viatura</span>
+                  <span className="sm:hidden">Viatura</span>
                 </Button>
               </Link>
-              <Link to="/registar-servico">
-                <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+              <Link to="/registar-servico" className="flex-1 sm:flex-none">
+                <Button size="sm" className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                   <Plus className="mr-2 h-4 w-4" />
-                  Registar Novo Serviço
+                  <span className="hidden sm:inline">Registar Serviço</span>
+                  <span className="sm:hidden">Serviço</span>
                 </Button>
               </Link>
             </div>
@@ -289,10 +291,10 @@ const Dashboard = () => {
               <thead>
                 <tr className="bg-muted/50">
                   <th className="text-left p-3 font-medium text-muted-foreground">Matrícula</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Viatura</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Viatura</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Serviço</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Data</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Estado</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground hidden md:table-cell">Data</th>
+                  <th className="text-left p-3 font-medium text-muted-foreground hidden sm:table-cell">Estado</th>
                   <th className="text-right p-3 font-medium text-muted-foreground">Acções</th>
                 </tr>
               </thead>
@@ -306,17 +308,20 @@ const Dashboard = () => {
                 ) : records.length > 0 ? (
                   records.slice(0, 5).map((row, i) => (
                     <tr key={i} className="border-t border-border hover:bg-muted/30 transition-colors">
-                      <td className="p-3 font-mono font-medium text-foreground">{row.car?.plateNumber}</td>
-                      <td className="p-3 text-foreground">{row.car?.brand} {row.car?.model}</td>
-                      <td className="p-3 text-muted-foreground truncate max-w-[200px]">{row.description}</td>
-                      <td className="p-3 text-muted-foreground">{new Date(row.date).toLocaleDateString('pt-PT')}</td>
-                      <td className="p-3">
+                      <td className="p-3 font-mono font-medium text-foreground">
+                        <div>{row.car?.plateNumber}</div>
+                        <div className="text-xs text-muted-foreground sm:hidden">{new Date(row.date).toLocaleDateString('pt-PT')}</div>
+                      </td>
+                      <td className="p-3 text-foreground hidden sm:table-cell">{row.car?.brand} {row.car?.model}</td>
+                      <td className="p-3 text-muted-foreground truncate max-w-[140px] sm:max-w-[200px]">{row.description}</td>
+                      <td className="p-3 text-muted-foreground hidden md:table-cell">{new Date(row.date).toLocaleDateString('pt-PT')}</td>
+                      <td className="p-3 hidden sm:table-cell">
                         <span className="inline-flex items-center gap-1 text-accent text-xs font-medium bg-accent/10 px-2 py-0.5 rounded-full">
                           <ShieldCheck className="h-3 w-3" /> Verificado
                         </span>
                       </td>
                       <td className="p-3 text-right">
-                        <Link to={`/historico?plate=${row.car?.plateNumber}`} className="text-accent hover:underline font-medium">
+                        <Link to={`/historico?plate=${row.car?.plateNumber}`} className="text-accent hover:underline font-medium text-xs sm:text-sm">
                           Histórico
                         </Link>
                       </td>

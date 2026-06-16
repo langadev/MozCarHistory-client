@@ -139,17 +139,18 @@ const WorkshopMechanics = () => {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto max-w-5xl px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-8">
             <div className="flex items-center gap-3">
               <UserCog className="h-6 w-6 text-accent" />
               <div>
-                <h1 className="font-display text-2xl font-bold text-foreground">Mecânicos</h1>
+                <h1 className="font-display text-xl md:text-2xl font-bold text-foreground">Mecânicos</h1>
                 <p className="text-sm text-muted-foreground">Gerir a equipa da oficina</p>
               </div>
             </div>
-            <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={openCreate}>
+            <Button className="bg-accent text-accent-foreground hover:bg-accent/90 shrink-0" onClick={openCreate}>
               <Plus className="mr-2 h-4 w-4" />
-              Adicionar Mecânico
+              <span className="hidden sm:inline">Adicionar Mecânico</span>
+              <span className="sm:hidden">Adicionar</span>
             </Button>
           </div>
 
