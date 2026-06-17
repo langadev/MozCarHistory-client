@@ -5,6 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getAdminStats } from "@/api/admin";
 import { getUnreadCount } from "@/api/messages";
 import { LayoutDashboard, Users, Building2, Car, LogOut, Shield, Menu, MessageSquare, ShieldCheck } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -118,11 +119,14 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             <Shield className="h-4 w-4 text-accent" />
             <span className="font-semibold text-sm">Painel Admin</span>
           </Link>
-          {pendingCount > 0 && (
-            <span className="ml-auto flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
-              {pendingCount}
-            </span>
-          )}
+          <div className="ml-auto flex items-center gap-1">
+            {pendingCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
+                {pendingCount}
+              </span>
+            )}
+            <NotificationBell />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">

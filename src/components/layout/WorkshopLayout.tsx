@@ -7,6 +7,7 @@ import {
   LayoutDashboard, Car, Wrench, Search, Grid3X3, User, LogOut, Shield,
   UserCog, AlertTriangle, Menu, List, ClipboardList, MessageSquare,
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -115,6 +116,9 @@ const WorkshopLayout = ({ children }: { children: React.ReactNode }) => {
             <Shield className="h-4 w-4 text-accent" />
             <span className="font-semibold text-sm">Moz Car History</span>
           </Link>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
         </header>
 
         {/* Verified warning banner */}

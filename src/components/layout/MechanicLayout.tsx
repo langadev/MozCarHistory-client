@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   LayoutDashboard, Wrench, Search, LogOut, KeyRound, Menu,
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
@@ -95,6 +96,9 @@ const MechanicLayout = ({ children }: { children: React.ReactNode }) => {
             <Wrench className="h-4 w-4 text-accent" />
             <span className="font-semibold text-sm">Moz Car History</span>
           </Link>
+          <div className="ml-auto">
+            <NotificationBell />
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto">

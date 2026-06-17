@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { SocketProvider } from "@/context/SocketContext";
+import { NotificationsProvider } from "@/context/NotificationsContext";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
 import WorkshopLayout from "@/components/layout/WorkshopLayout";
@@ -120,6 +121,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <SocketProvider>
+          <NotificationsProvider>
           <MainLayout>
             <Routes>
               {/* Admin routes */}
@@ -167,6 +169,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
             </Routes>
           </MainLayout>
+          </NotificationsProvider>
           </SocketProvider>
         </AuthProvider>
       </BrowserRouter>
