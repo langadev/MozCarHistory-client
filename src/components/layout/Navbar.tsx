@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { Shield, Menu, X, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
+import { Shield, Menu, X, LogOut, ChevronDown, LayoutDashboard, UserCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -123,6 +123,15 @@ const Navbar = () => {
                   {user?.role === "admin" ? "Painel Admin" : "Dashboard"}
                 </DropdownMenuItem>
               )}
+              {user?.role === "comprador" && (
+                <DropdownMenuItem
+                  onClick={() => navigate("/perfil")}
+                  className="gap-2 cursor-pointer"
+                >
+                  <UserCircle className="h-4 w-4" />
+                  O Meu Perfil
+                </DropdownMenuItem>
+              )}
               <DropdownMenuItem
                 onClick={logout}
                 className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
@@ -198,6 +207,17 @@ const Navbar = () => {
             >
               <LayoutDashboard className="h-4 w-4" />
               {user?.role === "admin" ? "Painel Admin" : "Dashboard"}
+            </Button>
+          )}
+          {user?.role === "comprador" && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { navigate("/perfil"); close(); }}
+              className="justify-start gap-2"
+            >
+              <UserCircle className="h-4 w-4" />
+              O Meu Perfil
             </Button>
           )}
           <Button

@@ -25,6 +25,7 @@ import AdminWorkshops from "./pages/admin/AdminWorkshops";
 import AdminVehicles from "./pages/admin/AdminVehicles";
 import AdminWorkshopDetail from "./pages/admin/AdminWorkshopDetail";
 import AdminRoles from "./pages/admin/AdminRoles";
+import BuyerProfile from "./pages/BuyerProfile";
 import WorkshopMechanics from "./pages/WorkshopMechanics";
 import WorkshopVehicles from "./pages/WorkshopVehicles";
 import WorkshopRecords from "./pages/WorkshopRecords";
@@ -146,6 +147,9 @@ const App = () => (
               {/* Mechanic routes */}
               <Route path="/mecanico/dashboard" element={<MechanicRoute><MechanicDashboard /></MechanicRoute>} />
               <Route path="/mecanico/registar-servico" element={<MechanicRoute><MechanicServiceForm /></MechanicRoute>} />
+
+              {/* Buyer profile */}
+              <Route path="/perfil" element={<ProtectedRoute allowedRoles={["comprador"]}><PageWrapper><BuyerProfile /></PageWrapper></ProtectedRoute>} />
 
               {/* Change password — any authenticated user */}
               <Route path="/alterar-senha" element={<ProtectedRoute allowedRoles={["mecanico", "oficina", "comprador", "admin"]}><PageWrapper><ChangePassword /></PageWrapper></ProtectedRoute>} />

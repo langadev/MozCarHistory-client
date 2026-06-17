@@ -1,14 +1,17 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search, Car, ShieldCheck, AlertTriangle, FileText, Gauge,
-  Calendar, Plus, Loader2, Fuel, Settings, Hash, ChevronLeft, ChevronRight,
+  Calendar, Plus, Loader2, Fuel, Settings, Hash, ChevronLeft, ChevronRight, Heart,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { searchCars, type CarSearchResult } from "@/api/cars";
+import { getMyFavoriteIds, addToFavorites, removeFromFavorites, addToSearchHistory } from "@/api/buyer";
 
 const SERVICE_TYPE_COLORS: Record<string, string> = {
   "Troca de Óleo": "bg-amber-500/10 text-amber-600 border-amber-200",
@@ -32,7 +35,10 @@ function serviceTypeBadge(type: string | null) {
 const PAGE_SIZE = 12;
 
 const BuyerSearch = () => {
-  const [query, setQuery] = useState("");
+  const { user, token } = useAuth();
+  const qc = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [searched, setSearched] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<CarSearchResult[]>([]);
@@ -40,6 +46,30 @@ const BuyerSearch = () => {
   const [page, setPage] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const isComprador = user?.role === "comprador";
+
+  // Auto-search if arriving with ?q= param
+  useEffect(() => {
+    const q = searchParams.get("q");
+    if (q && q.trim().length >= 2) {
+      handleSearch(undefined, 1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const { data: favoriteIds = [] } = useQuery({
+    queryKey: ["my-favorite-ids"],
+    queryFn: () => getMyFavoriteIds(token!),
+    enabled: !!token && isComprador,
+  });
+
+  const favoriteMutation = useMutation({
+    mutationFn: ({ carId, add }: { carId: number; add: boolean }) =>
+      add ? addToFavorites(token!, carId) : removeFromFavorites(token!, carId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["my-favorite-ids"] }),
+    onError: () => toast.error("Erro ao actualizar favoritos"),
+  });
 
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
@@ -59,11 +89,26 @@ const BuyerSearch = () => {
       setPage(data.page);
       setSearched(true);
       if (data.total === 0) toast.info("Nenhuma viatura encontrada.");
+      // Save to search history for authenticated buyers
+      if (targetPage === 1 && token && isComprador) {
+        addToSearchHistory(token, q).catch(() => {});
+        qc.invalidateQueries({ queryKey: ["search-history"] });
+      }
     } catch (error: any) {
       toast.error(error?.message || "Erro ao pesquisar");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const toggleFavorite = (car: CarSearchResult) => {
+    if (!token || !isComprador) {
+      toast.info("Inicie sessão como comprador para guardar favoritos.");
+      return;
+    }
+    const isFav = favoriteIds.includes(car.id);
+    favoriteMutation.mutate({ carId: car.id, add: !isFav });
+    toast.success(isFav ? "Removido dos favoritos" : "Guardado nos favoritos");
   };
 
   const goToPage = (p: number) => {
@@ -208,10 +253,19 @@ const BuyerSearch = () => {
                       initial={{ opacity: 0, y: 16 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
+                      className="relative group"
                     >
+                      {/* Favorite heart button */}
+                      <button
+                        className="absolute top-2 right-2 z-10 bg-background/80 backdrop-blur-sm rounded-full p-1.5 shadow border border-border transition-all hover:scale-110 opacity-0 group-hover:opacity-100 focus:opacity-100"
+                        title={favoriteIds.includes(car.id) ? "Remover dos favoritos" : "Guardar nos favoritos"}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); toggleFavorite(car); }}
+                      >
+                        <Heart className={`h-3.5 w-3.5 transition-colors ${favoriteIds.includes(car.id) ? "fill-destructive text-destructive" : "text-muted-foreground"}`} />
+                      </button>
                       <Link
                         to={`/historico?plate=${encodeURIComponent(car.plateNumber)}`}
-                        className="block bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-card-hover hover:border-accent/40 transition-all group"
+                        className="block bg-card border border-border rounded-xl overflow-hidden shadow-card hover:shadow-card-hover hover:border-accent/40 transition-all"
                       >
                         {/* Photo */}
                         <div className="aspect-video bg-muted relative overflow-hidden">
