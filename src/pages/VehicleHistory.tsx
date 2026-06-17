@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { searchRecordsByPlate, searchRecordsByVin } from "@/api/records";
 import { getCarByPlate } from "@/api/cars";
 import { useAuth } from "@/hooks/useAuth";
+import { exportHistoryPdf } from "@/lib/exportPdf";
 
 const SERVICE_TYPE_COLORS: Record<string, string> = {
   "Troca de Óleo": "bg-amber-500/10 text-amber-600 border-amber-200",
@@ -203,7 +204,13 @@ const VehicleHistory = () => {
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button variant="outline" size="sm" className="border-primary text-primary hover:bg-primary/5 w-full sm:w-auto">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="border-primary text-primary hover:bg-primary/5 w-full sm:w-auto"
+                  disabled={recordsCount === 0}
+                  onClick={() => exportHistoryPdf(car, data)}
+                >
                   <Download className="mr-2 h-4 w-4" />
                   <span className="hidden sm:inline">Exportar PDF</span>
                   <span className="sm:hidden">PDF</span>
