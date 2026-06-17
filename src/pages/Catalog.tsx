@@ -127,7 +127,7 @@ const Catalog = () => {
                                             <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Quilometragem</span>
                                             <div className="flex items-center gap-1.5 font-medium text-sm">
                                                 <Gauge className="h-3.5 w-3.5 text-accent" />
-                                                {vehicle.mileage.toLocaleString()} km
+                                                {vehicle.mileage ? vehicle.mileage.toLocaleString() + " km" : "—"}
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-0.5">
