@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import {
   ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin,
   Gauge, Calendar, User, Loader2, Plus, X, ChevronLeft,
-  ChevronRight, Fuel, Settings, DollarSign, Bell,
+  ChevronRight, Fuel, Settings, Bell,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
@@ -306,23 +306,14 @@ const VehicleHistory = () => {
                     </div>
                   )}
 
-                  {/* Cost & next service */}
-                  {(record.cost || record.nextServiceMileage) && (
+                  {/* Next service mileage */}
+                  {record.nextServiceMileage && (
                     <div className="flex flex-wrap gap-3 mb-4">
-                      {record.cost && (
-                        <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg text-sm">
-                          <DollarSign className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-muted-foreground text-xs">Custo:</span>
-                          <span className="font-bold text-foreground">{record.cost.toLocaleString("pt-PT")} MT</span>
-                        </div>
-                      )}
-                      {record.nextServiceMileage && (
-                        <div className="flex items-center gap-1.5 bg-amber-500/5 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
-                          <Bell className="h-3.5 w-3.5 text-amber-500" />
-                          <span className="text-xs text-amber-600">Próximo:</span>
-                          <span className="font-bold text-amber-700">{record.nextServiceMileage.toLocaleString("pt-PT")} km</span>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-1.5 bg-amber-500/5 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
+                        <Bell className="h-3.5 w-3.5 text-amber-500" />
+                        <span className="text-xs text-amber-600">Próximo:</span>
+                        <span className="font-bold text-amber-700">{record.nextServiceMileage.toLocaleString("pt-PT")} km</span>
+                      </div>
                     </div>
                   )}
 
