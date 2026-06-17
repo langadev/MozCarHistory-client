@@ -105,7 +105,7 @@ export async function getAllVehicles(): Promise<VehicleSummary[]> {
       model: car.model,
       photos: car.photos,
     },
-    mileage: car.records?.[0]?.mileage || 0,
+    mileage: car.records?.[0]?.mileage || car.initialMileage || 0,
     description: car.records?.[0]?.description || "Sem descrição disponível",
     date: car.records?.[0]?.date || car.createdAt,
     workshopId: car.records?.[0]?.workshopId || 0,
