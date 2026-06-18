@@ -1,10 +1,10 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ShieldCheck, AlertTriangle, Download, Car, Wrench, MapPin,
   Gauge, Calendar, User, Loader2, Plus, X, ChevronLeft,
-  ChevronRight, Fuel, Settings, Bell,
+  ChevronRight, Fuel, Settings, Bell, ChevronDown, Filter,
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -45,6 +45,9 @@ const VehicleHistory = () => {
   const [carInfo, setCarInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightbox, setLightbox] = useState<{ photos: string[]; index: number } | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
+  const [visibleCount, setVisibleCount] = useState(5);
   const { user, token } = useAuth();
 
   const plate = searchParams.get("plate");
@@ -101,6 +104,19 @@ const VehicleHistory = () => {
   const recordsCount = data.length;
   const maxMileage = data.length > 0 ? Math.max(...data.map(d => d.mileage)) : null;
   const nextServiceMileage = data.find(d => d.nextServiceMileage)?.nextServiceMileage ?? null;
+
+  const serviceTypes = useMemo(
+    () => Array.from(new Set(data.map(r => r.serviceType).filter(Boolean))),
+    [data],
+  );
+
+  const filteredData = useMemo(
+    () => (activeFilter ? data.filter(r => r.serviceType === activeFilter) : data),
+    [data, activeFilter],
+  );
+
+  const visibleData = filteredData.slice(0, visibleCount);
+  const hasMore = filteredData.length > visibleCount;
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,112 +262,197 @@ const VehicleHistory = () => {
 
         {/* Timeline */}
         {recordsCount > 0 && (
-          <div className="relative">
-            <div className="hidden md:block absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
+          <div>
+            {/* Filter pills */}
+            {serviceTypes.length > 1 && (
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => { setActiveFilter(null); setVisibleCount(5); }}
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                    !activeFilter
+                      ? "bg-accent text-accent-foreground border-accent"
+                      : "bg-card border-border text-muted-foreground hover:border-accent/50"
+                  }`}
+                >
+                  <Filter className="h-3 w-3" />
+                  Todos ({data.length})
+                </button>
+                {serviceTypes.map(type => (
+                  <button
+                    key={type}
+                    type="button"
+                    onClick={() => { setActiveFilter(activeFilter === type ? null : type); setVisibleCount(5); }}
+                    className={`text-xs font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                      activeFilter === type
+                        ? "bg-accent text-accent-foreground border-accent"
+                        : "bg-card border-border text-muted-foreground hover:border-accent/50"
+                    }`}
+                  >
+                    {type} ({data.filter(r => r.serviceType === type).length})
+                  </button>
+                ))}
+              </div>
+            )}
 
-            {data.map((record, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: i * 0.07 }}
-                className="relative pl-4 md:pl-14 pb-6 md:pb-8"
-              >
-                <div className="hidden md:block absolute left-4 w-5 h-5 rounded-full border-2 bg-accent/20 border-accent">
-                  <div className="absolute inset-1 rounded-full bg-accent" />
-                </div>
+            <div className="relative">
+              <div className="hidden md:block absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
 
-                <div className="bg-card border border-border rounded-lg p-4 md:p-5 shadow-card hover:shadow-card-hover transition-shadow">
-                  {/* Header */}
-                  <div className="flex flex-col gap-2 mb-4">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {serviceTypeBadge(record.serviceType)}
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(record.date).toLocaleDateString("pt-PT", { day: "numeric", month: "short", year: "numeric" })}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-sm font-medium bg-muted/50 px-2 py-1 rounded">
-                        <Gauge className="h-3.5 w-3.5 text-accent" />
-                        {record.mileage.toLocaleString("pt-PT")} km
-                      </div>
+              {visibleData.map((record, i) => {
+                const isExpanded = expandedIds.has(i);
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: Math.min(i * 0.07, 0.3) }}
+                    className="relative pl-4 md:pl-14 pb-4 md:pb-5"
+                  >
+                    <div className="hidden md:block absolute left-4 w-5 h-5 rounded-full border-2 bg-accent/20 border-accent">
+                      <div className="absolute inset-1 rounded-full bg-accent" />
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                        <MapPin className="h-3.5 w-3.5" />
-                        {record.workshop?.name}
-                      </div>
-                      {record.mechanic?.name && (
-                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground bg-muted/50 px-2 py-1 rounded">
-                          <User className="h-3.5 w-3.5" />
-                          {record.mechanic.name}
-                          {record.mechanic.specialty && (
-                            <span className="text-muted-foreground/60">· {record.mechanic.specialty}</span>
-                          )}
+                    <div className="bg-card border border-border rounded-lg shadow-card hover:shadow-card-hover transition-shadow overflow-hidden">
+                      {/* Compact header — always visible, clickable to expand */}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedIds(prev => {
+                            const next = new Set(prev);
+                            if (next.has(i)) next.delete(i);
+                            else next.add(i);
+                            return next;
+                          })
+                        }
+                        className="w-full text-left p-4 md:p-5 flex items-start gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                            {serviceTypeBadge(record.serviceType)}
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                              <Calendar className="h-3 w-3" />
+                              {new Date(record.date).toLocaleDateString("pt-PT", { day: "numeric", month: "short", year: "numeric" })}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs font-medium bg-muted/50 px-2 py-1 rounded">
+                              <Gauge className="h-3 w-3 text-accent" />
+                              {record.mileage.toLocaleString("pt-PT")} km
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <MapPin className="h-3 w-3 shrink-0" />
+                            <span className="truncate">{record.workshop?.name}</span>
+                            {record.mechanic?.name && (
+                              <>
+                                <span className="text-border">·</span>
+                                <User className="h-3 w-3 shrink-0" />
+                                <span className="truncate">{record.mechanic.name}</span>
+                              </>
+                            )}
+                          </div>
                         </div>
-                      )}
-                    </div>
-                  </div>
+                        <div className="flex items-center gap-2 shrink-0 pt-0.5">
+                          {!isExpanded && record.photos?.length > 0 && (
+                            <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {record.photos.length} foto{record.photos.length !== 1 ? "s" : ""}
+                            </span>
+                          )}
+                          <ChevronDown
+                            className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+                          />
+                        </div>
+                      </button>
 
-                  {/* Description */}
-                  <div className="mb-4">
-                    <p className="font-semibold text-sm mb-1 text-foreground">Serviço Realizado</p>
-                    <p className="text-muted-foreground text-sm leading-relaxed">{record.description}</p>
-                  </div>
-
-                  {/* Parts */}
-                  {record.parts && (
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold mb-2 text-foreground">Peças Substituídas</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {record.parts.split(",").map((s: string, j: number) => (
-                          <span key={j} className="text-xs bg-muted px-2.5 py-1.5 rounded-md text-muted-foreground">
-                            {s.trim()}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Next service mileage */}
-                  {record.nextServiceMileage && (
-                    <div className="flex flex-wrap gap-3 mb-4">
-                      <div className="flex items-center gap-1.5 bg-amber-500/5 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
-                        <Bell className="h-3.5 w-3.5 text-amber-500" />
-                        <span className="text-xs text-amber-600">Próximo:</span>
-                        <span className="font-bold text-amber-700">{record.nextServiceMileage.toLocaleString("pt-PT")} km</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Photos */}
-                  {record.photos && record.photos.length > 0 && (
-                    <div className="mb-4">
-                      <p className="text-sm font-semibold mb-2 text-foreground">Fotos do Serviço</p>
-                      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
-                        {record.photos.map((photo: string, idx: number) => (
-                          <button
-                            key={idx}
-                            type="button"
-                            onClick={() => setLightbox({ photos: record.photos, index: idx })}
-                            className="aspect-square rounded-md overflow-hidden border border-border hover:border-accent transition-colors block p-0"
+                      {/* Expanded details */}
+                      <AnimatePresence initial={false}>
+                        {isExpanded && (
+                          <motion.div
+                            key="expanded"
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
                           >
-                            <img src={photo} alt={`Serviço ${idx + 1}`} className="w-full h-full object-cover" />
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                            <div className="px-4 md:px-5 pb-4 md:pb-5 border-t border-border">
+                              {/* Description */}
+                              <div className="mt-4 mb-4">
+                                <p className="font-semibold text-sm mb-1 text-foreground">Serviço Realizado</p>
+                                <p className="text-muted-foreground text-sm leading-relaxed">{record.description}</p>
+                              </div>
 
-                  {/* Footer */}
-                  <div className="pt-2 border-t border-border">
-                    <span className="inline-flex items-center gap-1.5 text-accent text-xs font-medium">
-                      <ShieldCheck className="h-4 w-4" /> Registo Verificado
-                    </span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                              {/* Parts */}
+                              {record.parts && (
+                                <div className="mb-4">
+                                  <p className="text-sm font-semibold mb-2 text-foreground">Peças Substituídas</p>
+                                  <div className="flex flex-wrap gap-1.5">
+                                    {record.parts.split(",").map((s: string, j: number) => (
+                                      <span key={j} className="text-xs bg-muted px-2.5 py-1.5 rounded-md text-muted-foreground">
+                                        {s.trim()}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Next service */}
+                              {record.nextServiceMileage && (
+                                <div className="flex flex-wrap gap-3 mb-4">
+                                  <div className="flex items-center gap-1.5 bg-amber-500/5 border border-amber-200 px-3 py-1.5 rounded-lg text-sm">
+                                    <Bell className="h-3.5 w-3.5 text-amber-500" />
+                                    <span className="text-xs text-amber-600">Próximo:</span>
+                                    <span className="font-bold text-amber-700">{record.nextServiceMileage.toLocaleString("pt-PT")} km</span>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Photos */}
+                              {record.photos && record.photos.length > 0 && (
+                                <div className="mb-4">
+                                  <p className="text-sm font-semibold mb-2 text-foreground">Fotos do Serviço</p>
+                                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2">
+                                    {record.photos.map((photo: string, idx: number) => (
+                                      <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => setLightbox({ photos: record.photos, index: idx })}
+                                        className="aspect-square rounded-md overflow-hidden border border-border hover:border-accent transition-colors block p-0"
+                                      >
+                                        <img src={photo} alt={`Serviço ${idx + 1}`} className="w-full h-full object-cover" />
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Footer */}
+                              <div className="pt-2 border-t border-border">
+                                <span className="inline-flex items-center gap-1.5 text-accent text-xs font-medium">
+                                  <ShieldCheck className="h-4 w-4" /> Registo Verificado
+                                </span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+
+            {/* Load more */}
+            {hasMore && (
+              <div className="text-center mt-2 mb-4 pl-4 md:pl-14">
+                <Button
+                  variant="outline"
+                  onClick={() => setVisibleCount(prev => prev + 5)}
+                  className="gap-2"
+                >
+                  <ChevronDown className="h-4 w-4" />
+                  Ver mais ({filteredData.length - visibleCount} restantes)
+                </Button>
+              </div>
+            )}
           </div>
         )}
       </div>
