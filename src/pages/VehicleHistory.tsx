@@ -79,6 +79,16 @@ const VehicleHistory = () => {
     else setIsLoading(false);
   }, [plate, vin, token]);
 
+  const serviceTypes = useMemo(
+    () => Array.from(new Set(data.map(r => r.serviceType).filter(Boolean))),
+    [data],
+  );
+
+  const filteredData = useMemo(
+    () => (activeFilter ? data.filter(r => r.serviceType === activeFilter) : data),
+    [data, activeFilter],
+  );
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -104,16 +114,6 @@ const VehicleHistory = () => {
   const recordsCount = data.length;
   const maxMileage = data.length > 0 ? Math.max(...data.map(d => d.mileage)) : null;
   const nextServiceMileage = data.find(d => d.nextServiceMileage)?.nextServiceMileage ?? null;
-
-  const serviceTypes = useMemo(
-    () => Array.from(new Set(data.map(r => r.serviceType).filter(Boolean))),
-    [data],
-  );
-
-  const filteredData = useMemo(
-    () => (activeFilter ? data.filter(r => r.serviceType === activeFilter) : data),
-    [data, activeFilter],
-  );
 
   const visibleData = filteredData.slice(0, visibleCount);
   const hasMore = filteredData.length > visibleCount;
